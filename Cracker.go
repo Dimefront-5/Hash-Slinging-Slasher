@@ -1,12 +1,16 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 )
+
+const SHA256_LEN = 64
+const MD5_LEN = 32
 
 func main() {
 	// Check if the correct number of command-line arguments are provided
@@ -30,13 +34,13 @@ func main() {
 	wordlist := string(wordlistBytes)
 	words := strings.Split(wordlist, "\n")
 
+	// Get the length of the hash to determine which hash function to use
+	hashLen := len(hash)
 	// Iterate over each word in the wordlist and check if its hash matches the given hash
 	for _, word := range words {
-		// Calculate the hash of the current word
-		hashedWord := fmt.Sprintf("%x", sha256.Sum256([]byte(word)))
 
 		// Check if the hash matches the given hash
-		if hashedWord == hash {
+		if calculateWordHash(hashLen, word) == hash {
 			fmt.Println("Hash cracked! The original word is:", word)
 			return
 		}
@@ -44,4 +48,18 @@ func main() {
 
 	// If no match is found, print a message
 	fmt.Println("Unable to crack the hash.")
+}
+// Calculate the hash of a given word,
+// the hash function to be used is based on the length of the hash
+func calculateWordHash(hashLen int, word string) string {
+	var hashedWord string
+
+	switch hashLen {
+	case SHA256_LEN:
+		hashedWord = fmt.Sprintf("%x", sha256.Sum256([]byte(word)))
+	case MD5_LEN:
+		hashedWord = fmt.Sprintf("%x", md5.Sum([]byte(word)))
+	}
+
+	return hashedWord
 }
