@@ -36,9 +36,9 @@ func main() {
 
 	// Get the length of the hash to determine which hash function to use
 	hashLen := len(hash)
+
 	// Iterate over each word in the wordlist and check if its hash matches the given hash
 	for _, word := range words {
-
 		// Check if the hash matches the given hash
 		if calculateWordHash(hashLen, word) == hash {
 			fmt.Println("Hash cracked! The original word is:", word)
@@ -46,9 +46,33 @@ func main() {
 		}
 	}
 
+	// If no match is found in wordlist, start iterate
+	// n = 1
+	for asciiStart := 32; asciiStart < 126; asciiStart++ {
+		guess := string(rune(asciiStart))
+
+		if calculateWordHash(hashLen, guess) == hash {
+			fmt.Println("Hash cracked! The original word is:", guess)
+			return
+		}
+	}
+
+	// n = 2
+	for firstChar := 32; firstChar < 126; firstChar++ {
+		for secondChar := 32; secondChar < 126; secondChar++ {
+			guess := string(rune(firstChar)) + string(rune(secondChar))
+
+			if calculateWordHash(hashLen, guess) == hash {
+				fmt.Println("Hash cracked! The original word is:", guess)
+				return
+			}
+		}
+	}
+
 	// If no match is found, print a message
 	fmt.Println("Unable to crack the hash.")
 }
+
 // Calculate the hash of a given word,
 // the hash function to be used is based on the length of the hash
 func calculateWordHash(hashLen int, word string) string {
