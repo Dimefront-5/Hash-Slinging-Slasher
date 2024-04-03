@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+	"flag"
+	"bufio"
 )
 
 const SHA256_LEN = 64
@@ -22,21 +24,93 @@ const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 
 func main() {
 
-	if len(os.Args) != 3 {
-		println("Usage: go run Cracker.go <hash> <wordlist>")
-		return
-	}
+	printAsciiArt()
+	// Parse command-line arguments
+	// Check if required arguments are provided
+	wordlist, salt, hash, hashlist := parseCommandLine()
 
-	hash := os.Args[1]
-	wordlistPath := os.Args[2]
 	start := time.Now()
-	findMatchingHash(hash, wordlistPath)
+	determineIfHashfile(hashlist, wordlist, salt, hash)
+	
 	duration := time.Since(start)
 	println("Time elapsed: ", duration)
 }
 
+func determineIfHashfile(hashlist string, wordlist string, salt string, hash string) {
+	if hashlist != "" {
+		file, err := os.Open(hashlist)
+		if err != nil {
+			println("Error opening hashlist:", err)
+			os.Exit(1)
+		}
+		defer file.Close()
 
-func findMatchingHash(hash string, wordlistPath string) {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			hash := scanner.Text()
+			if strings.Index(hash, "$") != -1 {
+				salt = strings.Split(hash, "$")[1]
+			}
+			findMatchingHash(hash, wordlist, salt)
+		}
+
+if err := scanner.Err(); err != nil {
+    println("Error reading hashlist:", err)
+    os.Exit(1)
+}
+
+	} else if hash != "" {
+		println("Cracking hash:", hash)
+		findMatchingHash(hash, wordlist, salt)
+	}
+}
+
+func printAsciiArt() {
+	asciiArt := `
+  ___ ___               .__    _________                       __                 
+ /   |   \_____    _____|  |__ \_   ___ \____________    ____ |  | __ ___________ 
+/    ~    \__  \  /  ___/  |  \/    \  \/\_  __ \__  \ _/ ___\|  |/ // __ \_  __ \
+\    Y    // __ \_\___ \|   Y  \     \____|  | \// __ \\  \___|    <\  ___/|  | \/
+ \___|_  /(____  /____  >___|  /\______  /|__|  (____  /\___  >__|_ \\___  >__|   
+       \/      \/     \/     \/        \/            \/     \/     \/    \/       
+`
+	fmt.Println(asciiArt)
+}
+
+func parseCommandLine() (string, string, string, string) {
+	var wordlist string
+	var hashlist string
+	var salt string
+	var hash string
+
+	flag.StringVar(&wordlist, "w", "", "specify a wordlist")
+	flag.StringVar(&hashlist, "t", "", "specify a list of hashes")
+	flag.StringVar(&salt, "s", "", "specify a salt")
+	flag.StringVar(&hash, "hash", "", "specify a hash")
+	flag.Parse()
+
+
+	if wordlist == "" {
+		wordlist = "rockyou.txt"
+	}
+
+	if hashlist == "" && hash != "" {
+		return wordlist, salt, hash, hashlist
+
+	} else if hashlist != "" && hash == "" {
+		return wordlist, salt, hash, hashlist
+
+	} else {
+		fmt.Println("Usage: go run Cracker.go -t <hashlist.txt> -w <wordlist> -s <salt> -hash <hash>")
+		fmt.Println("Must provide a hashlist or a hash to crack.")
+		os.Exit(1)
+	}
+
+	return wordlist, salt, hash, hashlist
+}
+
+
+func findMatchingHash(hash string, wordlistPath string, salt string) {
 
 	// Read the wordlist file
 	wordlistBytes, err := ioutil.ReadFile(wordlistPath)
@@ -51,16 +125,16 @@ func findMatchingHash(hash string, wordlistPath string) {
 
 	hashLen := len(hash)
 
-	// Iterate over each word in the wordlist and check if its hash matches the given hash
 	for _, word := range words {
-		if calculateWordHash(hashLen, word) == hash {
+		if calculateWordHash(hashLen, word, salt) == hash {
 			println("Hash cracked! The original word is:", word)
 			return
 		}
 	}
 
+	println("No match found in the wordlist. Trying all possible combinations...")
 	// If no match is found, let's iterate over all possible combinations of characters
-	shouldReturn := iteratingOverAllCombinations(hashLen, hash)
+	shouldReturn := iteratingOverAllCombinations(hashLen, hash, salt)
 	if shouldReturn {
 		return
 	}
@@ -72,8 +146,12 @@ func findMatchingHash(hash string, wordlistPath string) {
 
 // Calculate the hash of a given word,
 // the hash function to be used is based on the length of the hash
-func calculateWordHash(hashLen int, word string) string {
+func calculateWordHash(hashLen int, word string, salt string) string {
 	var hashedWord string
+
+	if salt != "" {
+		word = salt + word
+	}
 
 	switch hashLen {
 	case SHA256_LEN:
@@ -91,13 +169,13 @@ func calculateWordHash(hashLen int, word string) string {
 }
 
 
-func iteratingOverAllCombinations(hashLen int, hash string) bool {
+func iteratingOverAllCombinations(hashLen int, hash string, salt string) bool {
 
 	maxLength := 10
 
 	for length := 1; length <= maxLength; length++ {
 		for _, character := range generateCombinations(characters, length) {
-			hashedGuess := calculateWordHash(hashLen, character)
+			hashedGuess := calculateWordHash(hashLen, character, salt)
 
 			if hash == hashedGuess {
 				println("Hash cracked! The original word is:", character)
@@ -122,4 +200,25 @@ func generateCombinationsHelper(characters string, length int, current string, r
 	for _, char := range characters {
 		generateCombinationsHelper(characters, length-1, current+string(char), result)
 	}
+}
+
+
+
+func divideIntoParts(words []string, n int) [][]string {
+    var divided [][]string
+
+    size := len(words) / n
+    for i := 0; i < n; i++ {
+        start := i * size
+        end := start + size
+
+        // For the last slice, append the remainder elements
+        if i == n-1 {
+            end = len(words)
+        }
+
+        divided = append(divided, words[start:end])
+    }
+
+    return divided
 }
