@@ -19,6 +19,7 @@ const MD5_LEN = 32
 const SHA1_LEN = 40
 const SHA512_LEN = 128
 const SHA384_LEN = 96
+const SHA224_LEN = 56
 
 const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 
@@ -90,38 +91,66 @@ func parseCommandLine() (string, string, string, string) {
 //Will determine if there is a file of hashes or just a single hash passed in
 func determineIfHashfile(hashlist string, wordlist string, salt string, hash string) {
 	if hashlist != "" {
-		file, err := os.Open(hashlist)
-		if err != nil {
-			println("Error opening hashlist:", err)
-			os.Exit(1)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			hash := scanner.Text()
-			encryptionScheme, salt, hash := determineIfSalted(hash)
-			encryptionScheme = detectionOfEncryptionScheme(encryptionScheme)
-
-			if encryptionScheme == "error" {
-				println("Error: Hash is not supported by this program - ", hash)
-			}else{
-				println("Cracking hash:", hash)
-				findMatchingHash(hash, wordlist, salt, encryptionScheme)
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			println("Error reading hashlist:", err)
-			os.Exit(1)
-		}
+		listOfHashes(hashlist, wordlist)
 
 	} else if hash != "" {
-		println("Cracking hash:", hash)
 		encryptionScheme, salt, hash := determineIfSalted(hash)
 		encryptionScheme = detectionOfEncryptionScheme(encryptionScheme)
+		schemeChecking(encryptionScheme, hash, wordlist, salt)
+	}
+}
+
+func listOfHashes(hashlist string, wordlist string) {
+	file, err := os.Open(hashlist)
+	if err != nil {
+		println("Error opening hashlist:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		hash := scanner.Text()
+		encryptionScheme, salt, hash := determineIfSalted(hash)
+		encryptionScheme = detectionOfEncryptionScheme(encryptionScheme)
+		schemeChecking(encryptionScheme, hash, wordlist, salt)
+	}
+
+	if err := scanner.Err(); err != nil {
+		println("Error reading hashlist:", err)
+		os.Exit(1)
+	}
+}
+
+func schemeChecking(encryptionScheme string, hash string, wordlist string, salt string) {
+	if encryptionScheme == "error" {
+		println("Error: Hash is not supported by this program - ", hash)
+	} else {
+		println("Cracking hash:", hash)
 		findMatchingHash(hash, wordlist, salt, encryptionScheme)
 	}
+}
+
+
+
+func detectionOfEncryptionScheme(encryptionScheme string) string {
+	if encryptionScheme == "1" {
+		return "md5"
+	}
+	if encryptionScheme == "2a" || encryptionScheme == "2y" || encryptionScheme == "2b" {
+		return "error"
+	}
+	if encryptionScheme == "5" {
+		return "sha256"
+	}
+	if encryptionScheme == "6" {
+		return "sha512"
+	}
+	if encryptionScheme == "y"{
+		return "error"
+	}
+	return ""
+
 }
 
 func determineIfSalted(hash string) (string, string, string) {
@@ -154,7 +183,8 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 	hashLen := len(hash)
 
 	for _, word := range words {
-		if calculateWordHash(hashLen, word, salt, encryptionScheme) == hash {
+		hashedWord := calculateWordHash(hashLen, word, salt, encryptionScheme)
+		if hashedWord == hash {
 			println("Hash cracked! The original word is:", word, "\n")
 			return
 		}
@@ -199,29 +229,12 @@ func calculateWordHash(hashLen int, word string, salt string, encryptionScheme s
 		hashedWord = fmt.Sprintf("%x", sha512.Sum512([]byte(word)))
 	case SHA384_LEN:
 		hashedWord = fmt.Sprintf("%x", sha512.Sum384([]byte(word)))
+	case SHA224_LEN:
+		hashedWord = fmt.Sprintf("%x", sha256.Sum224([]byte(word)))
 	}
 	return hashedWord
 }
 
-func detectionOfEncryptionScheme(encryptionScheme string) string {
-	if encryptionScheme == "1" {
-		return "md5"
-	}
-	if encryptionScheme == "2a" || encryptionScheme == "2y" || encryptionScheme == "2b" {
-		return "error"
-	}
-	if encryptionScheme == "5" {
-		return "sha256"
-	}
-	if encryptionScheme == "6" {
-		return "sha512"
-	}
-	if encryptionScheme == "y"{
-		return "error"
-	}
-	return ""
-
-}
 
 // Calculate the hash of a given word
 func hashWord(word string, encryptionScheme string, salt string) string {
@@ -246,7 +259,7 @@ func iteratingOverAllCombinations(hashLen int, hash string, salt string, encyrpt
 	for length := 1; length <= maxLength; length++ {
 		for _, character := range generateCombinations(characters, length) {
 			hashedGuess := calculateWordHash(hashLen, character, salt, encyrptionScheme)
-
+			
 			if hash == hashedGuess {
 				println("Hash cracked! The original word is:", character + "\n")
 				return true
