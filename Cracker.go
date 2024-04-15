@@ -100,6 +100,8 @@ func determineIfHashfile(hashlist string, wordlist string, salt string, hash str
 	}
 }
 
+
+//If there is a list of hashes this is the approach it takes to cracking them
 func listOfHashes(hashlist string, wordlist string) {
 	file, err := os.Open(hashlist)
 	if err != nil {
@@ -122,6 +124,7 @@ func listOfHashes(hashlist string, wordlist string) {
 	}
 }
 
+//Will check if the encryption scheme is supported by the program
 func schemeChecking(encryptionScheme string, hash string, wordlist string, salt string) {
 	if encryptionScheme == "error" {
 		println("Error: Hash is not supported by this program - ", hash)
@@ -132,7 +135,7 @@ func schemeChecking(encryptionScheme string, hash string, wordlist string, salt 
 }
 
 
-
+//Will determine the encryption scheme of the hash if it is a shadow file
 func detectionOfEncryptionScheme(encryptionScheme string) string {
 	if encryptionScheme == "1" {
 		return "md5"
@@ -153,6 +156,7 @@ func detectionOfEncryptionScheme(encryptionScheme string) string {
 
 }
 
+//Will determine if the hash is salted or not
 func determineIfSalted(hash string) (string, string, string) {
 	if strings.Index(hash, "$") != -1 {
 		if strings.Split(hash, "$")[1] == "y" {
@@ -253,11 +257,22 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 
 // Iterates over all possible combinations of characters
 func iteratingOverAllCombinations(hashLen int, hash string, salt string, encyrptionScheme string) bool {
+	ticker := time.NewTicker(1 * time.Second) // Create a ticker that ticks every second
+    defer ticker.Stop()                        // Stop the ticker when main function exits
+
+    startTime := time.Now()
 
 	maxLength := 10
 
 	for length := 1; length <= maxLength; length++ {
+		
 		for _, character := range generateCombinations(characters, length) {
+			select {
+				case <-ticker.C: // Wait for the ticker to tick
+					elapsedTime := time.Since(startTime) 
+					fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
+			}
+			
 			hashedGuess := calculateWordHash(hashLen, character, salt, encyrptionScheme)
 			
 			if hash == hashedGuess {
