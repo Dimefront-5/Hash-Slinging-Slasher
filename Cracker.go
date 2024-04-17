@@ -12,6 +12,9 @@ import (
 	"time"
 	"flag"
 	"bufio"
+	// "sync"
+	// "syscall"
+	// "os/signal"
 )
 
 const SHA256_LEN = 64
@@ -31,12 +34,13 @@ func main() {
 	// Check if required arguments are provided
 	wordlist, salt, hash, hashlist := parseCommandLine()
 
-	start := time.Now()
-	determineIfHashfile(hashlist, wordlist, salt, hash)
-	
-	duration := time.Since(start)
-	println("Time elapsed: ", duration.Seconds(), "seconds")
+	// Determine if the hash is a file or a single hash
+	determineIfHashfile(hashlist, wordlist, salt, hash, "")
 }
+
+
+
+
 
 // Inward Facing Functions
 
@@ -88,34 +92,64 @@ func parseCommandLine() (string, string, string, string) {
 	return wordlist, salt, hash, hashlist
 }
 
+
 //Will determine if there is a file of hashes or just a single hash passed in
-func determineIfHashfile(hashlist string, wordlist string, salt string, hash string) {
+func determineIfHashfile(hashlist string, wordlist string, salt string, hash string, resumingAtWord string) {
+
+	wordToResumeAt := seeIfResuming(hashlist, wordlist, salt, hash)
+
+
 	if hashlist != "" {
-		listOfHashes(hashlist, wordlist)
+		listOfHashes(hashlist, wordlist, wordToResumeAt)
 
 	} else if hash != "" {
-		encryptionScheme, salt, hash := determineIfSalted(hash)
+		encryptionScheme, salt, hash := determineIfSalted(hash, salt)
 		encryptionScheme = detectionOfEncryptionScheme(encryptionScheme)
-		schemeChecking(encryptionScheme, hash, wordlist, salt)
+		schemeChecking(encryptionScheme, hash)
+		findMatchingHash(hash, wordlist, salt, encryptionScheme, wordToResumeAt)
 	}
 }
 
 
-//If there is a list of hashes this is the approach it takes to cracking them
-func listOfHashes(hashlist string, wordlist string) {
-	file, err := os.Open(hashlist)
+func seeIfResuming(hashlist string, wordlist string, salt string, hash string) string {
+	file, err := os.Open("benchmark.txt")
 	if err != nil {
-		println("Error opening hashlist:", err)
+		println("Error opening File:", hashlist)
 		os.Exit(1)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+
+	scanner.Scan()
+	if scanner.Text() == hash {
+		scanner.Scan()
+		resumingAtWord := scanner.Text()
+		resumingAtWord = strings.TrimPrefix(resumingAtWord, "\x00")
+		//println("We see that you recently have been running a hashcrack on this hash, here is the last guess we will start from: ", resumingAtWord, "\n\n")
+		return resumingAtWord
+	}
+	return ""
+
+}
+
+//If there is a list of hashes this is the approach it takes to cracking them
+func listOfHashes(hashlist string, wordlist string, wordToResumeAt string) {
+	file, err := os.Open(hashlist)
+	if err != nil {
+		println("Error opening File:", hashlist)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
 	for scanner.Scan() {
 		hash := scanner.Text()
-		encryptionScheme, salt, hash := determineIfSalted(hash)
+		encryptionScheme, salt, hash := determineIfSalted(hash, "")
 		encryptionScheme = detectionOfEncryptionScheme(encryptionScheme)
-		schemeChecking(encryptionScheme, hash, wordlist, salt)
+		schemeChecking(encryptionScheme, hash)
+		findMatchingHash(hash, wordlist, salt, encryptionScheme, wordToResumeAt)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -124,13 +158,13 @@ func listOfHashes(hashlist string, wordlist string) {
 	}
 }
 
+
 //Will check if the encryption scheme is supported by the program
-func schemeChecking(encryptionScheme string, hash string, wordlist string, salt string) {
+func schemeChecking(encryptionScheme string, hash string) {
 	if encryptionScheme == "error" {
 		println("Error: Hash is not supported by this program - ", hash)
 	} else {
 		println("Cracking hash:", hash)
-		findMatchingHash(hash, wordlist, salt, encryptionScheme)
 	}
 }
 
@@ -157,21 +191,30 @@ func detectionOfEncryptionScheme(encryptionScheme string) string {
 }
 
 //Will determine if the hash is salted or not
-func determineIfSalted(hash string) (string, string, string) {
+func determineIfSalted(hash string, salt string) (string, string, string) {
 	if strings.Index(hash, "$") != -1 {
 		if strings.Split(hash, "$")[1] == "y" {
 			return strings.Split(hash, "$")[1], strings.Split(hash, "$")[3], strings.Split((strings.Split(hash, "$")[4]), ":")[0]
 		}
 		return strings.Split(hash, "$")[1], strings.Split(hash, "$")[2], strings.Split((strings.Split(hash, "$")[3]), ":")[0]
 	} else {
-		return "", "", hash
+		return "", salt, hash
 	}
 }
 
 
 
 //Our high level function that will iterate through our wordlist and check if the hash matches then will iterate through all possible combinations
-func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string) {
+func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string, wordToResumeAt string) {
+
+	hashLen := len(hash)
+
+	// if wordToResumeAt != "" {
+	// 	shouldReturn := iteratingOverAllCombinationsFromAStartingWord(hashLen, hash, salt, encryptionScheme, wordToResumeAt)
+	// 	if shouldReturn {
+	// 		return
+	// 	}
+	// }
 
 	// Read the wordlist file
 	wordlistBytes, err := ioutil.ReadFile(wordlistPath)
@@ -184,26 +227,94 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 	wordlist := string(wordlistBytes)
 	words := strings.Split(wordlist, "\n")
 
-	hashLen := len(hash)
 
 	for _, word := range words {
 		hashedWord := calculateWordHash(hashLen, word, salt, encryptionScheme)
 		if hashedWord == hash {
-			println("Hash cracked! The original word is:", word, "\n")
+			println("\n\nHash cracked! The original word is:", word, "\n")
 			return
 		}
 	}
 
-	println("No match found in the wordlist. Trying all possible combinations...")
+	println("No match found in the wordlist. Trying all possible combinations...\n")
 
-	// If no match is found, let's iterate over all possible combinations of characters
-	shouldReturn := iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme)
-	if shouldReturn {
+	//Create a channel to signal to other go rotuines that the hash has been cracked
+	stop := make(chan bool)
+
+	for i := 0; i < len(characters); i++ {
+		go func(i int) {
+			select {
+			case <-stop:
+				return // Quit signal received, terminate goroutine
+			default:
+				iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop)
+			}
+		}(i)
+	}
+
+	go func() {
+		timeTracker(stop)
+	}()
+
+	// Wait for a signal from one of the goroutines
+	<-stop
+	
+}
+
+func timeTracker(quit chan bool) {
+    ticker := time.NewTicker(1 * time.Second)
+    defer ticker.Stop()
+
+    startTime := time.Now()
+
+    for {
+        select {
+        case <-ticker.C:
+            elapsedTime := time.Since(startTime)
+            fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
+        case <-quit:
+            return
+        }
+    }
+}
+
+// Function to iterate over all possible combinations of characters
+func iteratingOverAllCombinations(hashLen int, hash string, salt string, encryptionScheme string, startingCharacter string, stop chan bool) {
+	maxLength := 10
+
+	for length := 1; length <= maxLength; length++ {
+		select {
+		case <-stop:
+			return // Quit signal received, terminate goroutine
+		default:
+			for _, character := range generateCombinations(characters, length, startingCharacter) {
+				hashedGuess := calculateWordHash(hashLen, character, salt, encryptionScheme)
+
+				if hash == hashedGuess {
+					fmt.Println("\n\nHash cracked! The original word is:", character)
+					close(stop)  // Signal other goroutines to stop
+					return             // Terminate goroutine if hash is cracked
+				}
+			}
+		}
+	}
+}
+
+// Generate all possible combinations of characters
+func generateCombinations(characters string, length int, startingCharacter string) []string {
+	var result []string
+	generateCombinationsHelper(characters, length, startingCharacter, &result)
+	return result
+}
+
+func generateCombinationsHelper(characters string, length int, current string, result *[]string) {
+	if length == 0 {
+		*result = append(*result, current)
 		return
 	}
-	
-	// If no match is found, print a message
-	println("Unable to crack the hash.")
+	for _, char := range characters {
+		generateCombinationsHelper(characters, length-1, current+string(char), result)
+	}
 }
 
 
@@ -235,6 +346,9 @@ func calculateWordHash(hashLen int, word string, salt string, encryptionScheme s
 		hashedWord = fmt.Sprintf("%x", sha512.Sum384([]byte(word)))
 	case SHA224_LEN:
 		hashedWord = fmt.Sprintf("%x", sha256.Sum224([]byte(word)))
+	default:
+		println("Unable to determine the hash function to be used.")
+		os.Exit(1)
 	}
 	return hashedWord
 }
@@ -253,71 +367,4 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 		hashedWord = fmt.Sprintf("%x", sha512.Sum512([]byte(word)))
 	}
 	return hashedWord
-}
-
-// Iterates over all possible combinations of characters
-func iteratingOverAllCombinations(hashLen int, hash string, salt string, encyrptionScheme string) bool {
-	ticker := time.NewTicker(1 * time.Second) // Create a ticker that ticks every second
-    defer ticker.Stop()                        // Stop the ticker when main function exits
-
-    startTime := time.Now()
-
-	maxLength := 10
-
-	for length := 1; length <= maxLength; length++ {
-		
-		for _, character := range generateCombinations(characters, length) {
-			select {
-				case <-ticker.C: // Wait for the ticker to tick
-					elapsedTime := time.Since(startTime) 
-					fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
-			}
-			
-			hashedGuess := calculateWordHash(hashLen, character, salt, encyrptionScheme)
-			
-			if hash == hashedGuess {
-				println("Hash cracked! The original word is:", character + "\n")
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// Generate all possible combinations of characters
-func generateCombinations(characters string, length int) []string {
-	var result []string
-	generateCombinationsHelper(characters, length, "", &result)
-	return result
-}
-
-func generateCombinationsHelper(characters string, length int, current string, result *[]string) {
-	if length == 0 {
-		*result = append(*result, current)
-		return
-	}
-	for _, char := range characters {
-		generateCombinationsHelper(characters, length-1, current+string(char), result)
-	}
-}
-
-
-// Divide a slice of strings into n parts used for parallel processing of a wordlist
-func divideIntoParts(words []string, n int) [][]string {
-    var divided [][]string
-
-    size := len(words) / n
-    for i := 0; i < n; i++ {
-        start := i * size
-        end := start + size
-
-        // For the last slice, append the remainder elements
-        if i == n-1 {
-            end = len(words)
-        }
-
-        divided = append(divided, words[start:end])
-    }
-
-    return divided
 }
