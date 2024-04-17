@@ -26,9 +26,9 @@ const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 //Outward facing function
 func main() {
 	// Prepare all combinations files
-	maxLength := 4
-	done := make(chan bool)
-	go generateAllSequences(maxLength, done)
+	// maxLength := 4
+	// done := make(chan bool)
+	// go generateAllSequences(maxLength, done)
 
 	printAsciiArt()
 
@@ -39,8 +39,8 @@ func main() {
 	start := time.Now()
 
 	// Wait for creating the files
-	println("Preparing combinations files...")
-	<-done
+	// println("Preparing combinations files...")
+	// <-done
 
 	determineIfHashfile(hashlist, wordlist, salt, hash)
 	
@@ -71,16 +71,23 @@ func parseCommandLine() (string, string, string, string) {
 	var hashlist string
 	var salt string
 	var hash string
+	var maxLength int
 
 	flag.StringVar(&wordlist, "w", "", "specify a wordlist")
 	flag.StringVar(&hashlist, "t", "", "specify a list of hashes")
 	flag.StringVar(&salt, "s", "", "specify a salt")
 	flag.StringVar(&hash, "hash", "", "specify a hash")
+	flag.IntVar(&maxLength, "maxLen", 0, "specify the max length of message")
 	flag.Parse()
 
 
 	if wordlist == "" {
 		wordlist = "rockyou.txt"
+	}
+
+	if maxLength != 0 {
+		generateAllSequences(maxLength)
+		println("Generating all character sequences...")
 	}
 
 	if hashlist == "" && hash != "" {
@@ -312,7 +319,8 @@ func generateCombinationsHelper(characters string, length int, current string, r
 }
 
 // Generate all possible combinations of characters
-func generateAllSequences(maxLength int, done chan bool) {
+// func generateAllSequences(maxLength int, done chan bool) {
+func generateAllSequences(maxLength int) {
 	for i, char := range characters {
 		var sequence []string
 		generateSequences(string(char), maxLength, &sequence)
@@ -322,7 +330,7 @@ func generateAllSequences(maxLength int, done chan bool) {
 		writeToFile(fileName, sequence)
 	}
 
-	done <- true
+	// done <- true
 }
 
 func generateSequences(prefix string, length int, sequence *[]string) {
