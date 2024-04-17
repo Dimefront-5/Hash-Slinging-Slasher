@@ -25,13 +25,23 @@ const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 
 //Outward facing function
 func main() {
+	// Prepare all combinations files
+	maxLength := 4
+	done := make(chan bool)
+	go generateAllSequences(maxLength, done)
 
 	printAsciiArt()
+
 	// Parse command-line arguments
 	// Check if required arguments are provided
 	wordlist, salt, hash, hashlist := parseCommandLine()
 
 	start := time.Now()
+
+	// Wait for creating the files
+	println("Preparing combinations files...")
+	<-done
+
 	determineIfHashfile(hashlist, wordlist, salt, hash)
 	
 	duration := time.Since(start)
@@ -299,6 +309,46 @@ func generateCombinationsHelper(characters string, length int, current string, r
 	for _, char := range characters {
 		generateCombinationsHelper(characters, length-1, current+string(char), result)
 	}
+}
+
+// Generate all possible combinations of characters
+func generateAllSequences(maxLength int, done chan bool) {
+	for i, char := range characters {
+		var sequence []string
+		generateSequences(string(char), maxLength, &sequence)
+		// println("prefix: ", char)
+		// println(sequence[1])
+		fileName := fmt.Sprintf("./sequences/%v.txt", i)
+		writeToFile(fileName, sequence)
+	}
+
+	done <- true
+}
+
+func generateSequences(prefix string, length int, sequence *[]string) {
+	*sequence = append(*sequence, prefix)
+	// println(prefix)
+	if len(prefix) < length {
+		for _, char := range characters {
+			generateSequences(prefix+string(char), length, sequence)
+		}
+	}
+}
+
+func writeToFile(fileName string, sequence []string) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		println("Error writing file:", err)
+		os.Exit(1)
+	}
+	for _, str := range sequence {
+		_, err := file.WriteString(str+"\n")
+		if err != nil {
+			println("Error writing content to file:", err)
+			os.Exit(1)
+		}
+	}
+	file.Close()
 }
 
 
