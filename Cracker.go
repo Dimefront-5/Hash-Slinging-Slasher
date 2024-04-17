@@ -1,17 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"crypto/md5"
-	"crypto/sha256"
 	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/sha512"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
-	"flag"
-	"bufio"
 )
 
 const SHA256_LEN = 64
@@ -23,7 +23,7 @@ const SHA224_LEN = 56
 
 const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 
-//Outward facing function
+// Outward facing function
 func main() {
 	// Prepare all combinations files
 	// maxLength := 4
@@ -43,13 +43,12 @@ func main() {
 	// <-done
 
 	determineIfHashfile(hashlist, wordlist, salt, hash)
-	
+
 	duration := time.Since(start)
 	println("Time elapsed: ", duration.Seconds(), "seconds")
 }
 
 // Inward Facing Functions
-
 
 // Print the ASCII art
 func printAsciiArt() {
@@ -64,8 +63,7 @@ func printAsciiArt() {
 	fmt.Println(asciiArt, "\n\n")
 }
 
-
-//Parses our Command Line Arguments
+// Parses our Command Line Arguments
 func parseCommandLine() (string, string, string, string) {
 	var wordlist string
 	var hashlist string
@@ -79,7 +77,6 @@ func parseCommandLine() (string, string, string, string) {
 	flag.StringVar(&hash, "hash", "", "specify a hash")
 	flag.IntVar(&maxLength, "maxLen", 0, "specify the max length of message")
 	flag.Parse()
-
 
 	if wordlist == "" {
 		wordlist = "rockyou.txt"
@@ -105,7 +102,7 @@ func parseCommandLine() (string, string, string, string) {
 	return wordlist, salt, hash, hashlist
 }
 
-//Will determine if there is a file of hashes or just a single hash passed in
+// Will determine if there is a file of hashes or just a single hash passed in
 func determineIfHashfile(hashlist string, wordlist string, salt string, hash string) {
 	if hashlist != "" {
 		listOfHashes(hashlist, wordlist)
@@ -117,8 +114,7 @@ func determineIfHashfile(hashlist string, wordlist string, salt string, hash str
 	}
 }
 
-
-//If there is a list of hashes this is the approach it takes to cracking them
+// If there is a list of hashes this is the approach it takes to cracking them
 func listOfHashes(hashlist string, wordlist string) {
 	file, err := os.Open(hashlist)
 	if err != nil {
@@ -141,7 +137,7 @@ func listOfHashes(hashlist string, wordlist string) {
 	}
 }
 
-//Will check if the encryption scheme is supported by the program
+// Will check if the encryption scheme is supported by the program
 func schemeChecking(encryptionScheme string, hash string, wordlist string, salt string) {
 	if encryptionScheme == "error" {
 		println("Error: Hash is not supported by this program - ", hash)
@@ -151,8 +147,7 @@ func schemeChecking(encryptionScheme string, hash string, wordlist string, salt 
 	}
 }
 
-
-//Will determine the encryption scheme of the hash if it is a shadow file
+// Will determine the encryption scheme of the hash if it is a shadow file
 func detectionOfEncryptionScheme(encryptionScheme string) string {
 	if encryptionScheme == "1" {
 		return "md5"
@@ -166,14 +161,14 @@ func detectionOfEncryptionScheme(encryptionScheme string) string {
 	if encryptionScheme == "6" {
 		return "sha512"
 	}
-	if encryptionScheme == "y"{
+	if encryptionScheme == "y" {
 		return "error"
 	}
 	return ""
 
 }
 
-//Will determine if the hash is salted or not
+// Will determine if the hash is salted or not
 func determineIfSalted(hash string) (string, string, string) {
 	if strings.Index(hash, "$") != -1 {
 		if strings.Split(hash, "$")[1] == "y" {
@@ -185,9 +180,7 @@ func determineIfSalted(hash string) (string, string, string) {
 	}
 }
 
-
-
-//Our high level function that will iterate through our wordlist and check if the hash matches then will iterate through all possible combinations
+// Our high level function that will iterate through our wordlist and check if the hash matches then will iterate through all possible combinations
 func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string) {
 
 	// Read the wordlist file
@@ -211,29 +204,42 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 		}
 	}
 
-	println("No match found in the wordlist. Trying all possible combinations...")
+	println("No match found in the wordlist. Trying all possible combinations...\n")
 
 	// If no match is found, let's iterate over all possible combinations of characters
-	shouldReturn := iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme)
-	if shouldReturn {
+	hashFound := make(chan bool)
+
+	// Opt #1: Using pre-generated sequence in files
+	// for i := range characters {
+	// 	fileName := fmt.Sprintf("./sequences/%v.txt", i)
+	// 	go readFileAndFindHash(hash, fileName, salt, encryptionScheme, hashFound)
+	// }
+
+	// Opt #2: Generate sequences now
+	maxLength := 3
+	allSequences := generateAllSequences(maxLength)
+	for i := range characters {
+		go findHashFromSecquence(hash, allSequences[i], salt, encryptionScheme, hashFound)
+	}
+
+	// shouldReturn := iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme)
+	if <-hashFound {
 		return
 	}
-	
+
 	// If no match is found, print a message
 	println("Unable to crack the hash.")
 }
-
 
 // Calculate the hash of a given word,
 // the hash function to be used is based on the length of the hash
 func calculateWordHash(hashLen int, word string, salt string, encryptionScheme string) string {
 	var hashedWord string
 
-	
 	if salt != "" {
 		word = salt + word
 	}
-	
+
 	if encryptionScheme != "" {
 		hashedWord = hashWord(word, encryptionScheme, salt)
 		return hashedWord
@@ -256,7 +262,6 @@ func calculateWordHash(hashLen int, word string, salt string, encryptionScheme s
 	return hashedWord
 }
 
-
 // Calculate the hash of a given word
 func hashWord(word string, encryptionScheme string, salt string) string {
 	var hashedWord string
@@ -275,25 +280,25 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 // Iterates over all possible combinations of characters
 func iteratingOverAllCombinations(hashLen int, hash string, salt string, encyrptionScheme string) bool {
 	ticker := time.NewTicker(1 * time.Second) // Create a ticker that ticks every second
-    defer ticker.Stop()                        // Stop the ticker when main function exits
+	defer ticker.Stop()                       // Stop the ticker when main function exits
 
-    startTime := time.Now()
+	startTime := time.Now()
 
 	maxLength := 10
 
 	for length := 1; length <= maxLength; length++ {
-		
+
 		for _, character := range generateCombinations(characters, length) {
 			select {
-				case <-ticker.C: // Wait for the ticker to tick
-					elapsedTime := time.Since(startTime) 
-					fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
+			case <-ticker.C: // Wait for the ticker to tick
+				elapsedTime := time.Since(startTime)
+				fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
 			}
-			
+
 			hashedGuess := calculateWordHash(hashLen, character, salt, encyrptionScheme)
-			
+
 			if hash == hashedGuess {
-				println("Hash cracked! The original word is:", character + "\n")
+				println("Hash cracked! The original word is:", character+"\n")
 				return true
 			}
 		}
@@ -320,25 +325,27 @@ func generateCombinationsHelper(characters string, length int, current string, r
 
 // Generate all possible combinations of characters
 // func generateAllSequences(maxLength int, done chan bool) {
-func generateAllSequences(maxLength int) {
+func generateAllSequences(maxLength int) [95][]string {
+// func generateAllSequences(maxLength int) {
+	var allSequences [95][]string
 	for i, char := range characters {
 		var sequence []string
-		generateSequences(string(char), maxLength, &sequence)
+		generateSequence(string(char), maxLength, &sequence)
 		// println("prefix: ", char)
 		// println(sequence[1])
-		fileName := fmt.Sprintf("./sequences/%v.txt", i)
-		writeToFile(fileName, sequence)
+		// fileName := fmt.Sprintf("./sequences/%v.txt", i)
+		// writeToFile(fileName, sequence)	// Opt #1
+		allSequences[i] = sequence // Opt #2
 	}
-
-	// done <- true
+	return allSequences
 }
 
-func generateSequences(prefix string, length int, sequence *[]string) {
+func generateSequence(prefix string, length int, sequence *[]string) {
 	*sequence = append(*sequence, prefix)
 	// println(prefix)
 	if len(prefix) < length {
 		for _, char := range characters {
-			generateSequences(prefix+string(char), length, sequence)
+			generateSequence(prefix+string(char), length, sequence)
 		}
 	}
 }
@@ -350,7 +357,7 @@ func writeToFile(fileName string, sequence []string) {
 		os.Exit(1)
 	}
 	for _, str := range sequence {
-		_, err := file.WriteString(str+"\n")
+		_, err := file.WriteString(str + "\n")
 		if err != nil {
 			println("Error writing content to file:", err)
 			os.Exit(1)
@@ -359,23 +366,59 @@ func writeToFile(fileName string, sequence []string) {
 	file.Close()
 }
 
+func readFileAndFindHash(hash string, fileName string, salt string, encryptionScheme string, hashFound chan bool) bool {
+	// Read the file
+	wordlistBytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		println("Error reading file:", err)
+		return false
+	}
+
+	// Convert the wordlist to a string array
+	wordlist := string(wordlistBytes)
+	words := strings.Split(wordlist, "\n")
+
+	hashLen := len(hash)
+
+	for _, word := range words {
+		hashedWord := calculateWordHash(hashLen, word, salt, encryptionScheme)
+		if hashedWord == hash {
+			println("Hash cracked! The original word is:", word, "\n")
+			hashFound <- true
+			return true
+		}
+	}
+	return false
+}
+
+func findHashFromSecquence(hash string, sequence []string, salt string, encryptionScheme string, hashFound chan bool) bool {
+	for _, word := range sequence {
+		hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
+		if hashedWord == hash {
+			println("Hash cracked! The original word is:", word, "\n")
+			hashFound <- true
+			return true
+		}
+	}
+	return false
+}
 
 // Divide a slice of strings into n parts used for parallel processing of a wordlist
 func divideIntoParts(words []string, n int) [][]string {
-    var divided [][]string
+	var divided [][]string
 
-    size := len(words) / n
-    for i := 0; i < n; i++ {
-        start := i * size
-        end := start + size
+	size := len(words) / n
+	for i := 0; i < n; i++ {
+		start := i * size
+		end := start + size
 
-        // For the last slice, append the remainder elements
-        if i == n-1 {
-            end = len(words)
-        }
+		// For the last slice, append the remainder elements
+		if i == n-1 {
+			end = len(words)
+		}
 
-        divided = append(divided, words[start:end])
-    }
+		divided = append(divided, words[start:end])
+	}
 
-    return divided
+	return divided
 }
