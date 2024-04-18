@@ -34,16 +34,15 @@ func main() {
 	// Check if required arguments are provided
 	wordlist, salt, hash, hashlist := parseCommandLine()
 
+	start := time.Now()
 	// Determine if the hash is a file or a single hash
-	determineIfHashfile(hashlist, wordlist, salt, hash, "")
+ 	determineIfHashfile(hashlist, wordlist, salt, hash, "")
+
+ 	duration := time.Since(start)
+ 	println("Time elapsed: ", duration.Seconds(), "seconds")
 }
 
-
-
-
-
 // Inward Facing Functions
-
 
 // Print the ASCII art
 func printAsciiArt() {
@@ -209,31 +208,14 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 
 	hashLen := len(hash)
 
-	// if wordToResumeAt != "" {
-	// 	shouldReturn := iteratingOverAllCombinationsFromAStartingWord(hashLen, hash, salt, encryptionScheme, wordToResumeAt)
-	// 	if shouldReturn {
-	// 		return
-	// 	}
-	// }
+	// Create channel to signal the hash is found in the wordlist
+	hashFound := make(chan bool)
 
-	// Read the wordlist file
-	wordlistBytes, err := ioutil.ReadFile(wordlistPath)
-	if err != nil {
-		println("Error reading wordlist:", err)
+	// Iterate all words in the wordlist to find the hashed word
+	iteratingWordList(wordlistPath, hash, salt, encryptionScheme, hashFound)
+
+	if <-hashFound {
 		return
-	}
-
-	// Convert the wordlist to a string array
-	wordlist := string(wordlistBytes)
-	words := strings.Split(wordlist, "\n")
-
-
-	for _, word := range words {
-		hashedWord := calculateWordHash(hashLen, word, salt, encryptionScheme)
-		if hashedWord == hash {
-			println("\n\nHash cracked! The original word is:", word, "\n")
-			return
-		}
 	}
 
 	println("No match found in the wordlist. Trying all possible combinations...\n")
@@ -367,4 +349,55 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 		hashedWord = fmt.Sprintf("%x", sha512.Sum512([]byte(word)))
 	}
 	return hashedWord
+}
+
+// Divide a slice of strings into n parts used for parallel processing of a wordlist
+ func divideIntoParts(words []string, n int) [][]string {
+     var divided [][]string
+
+     size := len(words) / n
+     for i := 0; i < n; i++ {
+         start := i * size
+         end := start + size
+
+         // For the last slice, append the remainder elements
+         if i == n-1 {
+             end = len(words)
+         }
+
+         divided = append(divided, words[start:end])
+     }
+
+     return divided
+}
+
+func findHashInParts(words []string, hashFound chan bool, hash string, salt string, encryptionScheme string) {
+	for _, word := range words {
+		hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
+		if hashedWord == hash {
+			println("\n\nHash cracked! The original word is:", word, "\n")
+			hashFound <- true
+			break
+		}
+	}
+}
+
+func iteratingWordList(wordlistPath string, hash string, salt string, encryptionScheme string, hashFound chan bool) {
+	// Read the wordlist file
+	wordlistBytes, err := ioutil.ReadFile(wordlistPath)
+	if err != nil {
+		println("Error reading wordlist:", err)
+		return
+	}
+
+	// Convert the wordlist to a string array
+	wordlist := string(wordlistBytes)
+	allWords := strings.Split(wordlist, "\n")
+
+	// divide the wordlist into parts and let go routines to 
+	numOfParts := 20
+	wordsArray := divideIntoParts(allWords, numOfParts)
+	for _, words := range wordsArray {
+		go findHashInParts(words, hashFound, hash, salt, encryptionScheme)
+	}
 }
