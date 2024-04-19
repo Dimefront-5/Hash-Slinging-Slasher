@@ -18,7 +18,10 @@ import (
 )
 
 var (
-	maxLength   int
+	maxLength   *int
+	noWordlist  *bool
+	noIteration *bool
+
 	lastGuessOfThread0  string
 	lastGuessOfThread1  string
 	lastGuessOfThread2  string
@@ -171,11 +174,14 @@ func parseCommandLine() (string, string, string, string, bool) {
 	var salt string
 	var hash string
 
-	flag.StringVar(&wordlist, "w", "", "specify a wordlist")
-	flag.StringVar(&hashlist, "t", "", "specify a list of hashes")
-	flag.StringVar(&salt, "s", "", "specify a salt")
-	flag.StringVar(&hash, "hash", "", "specify a hash")
-	benchmarking := flag.Bool("b", false, "specify if you want benchmarking")
+	flag.StringVar(&wordlist, "w", "", "Allows for a custom wordlist to be used. Default is rockyou.txt")
+	flag.StringVar(&hashlist, "t", "", "Allows for a list of hashes to be cracked, one per line.")
+	flag.StringVar(&salt, "s", "", "If you are cracking a salted hash not in shadow form or with a haslist file, specify the salt here")
+	flag.StringVar(&hash, "hash", "", "user can enter one hash to crack.")
+	benchmarking := flag.Bool("b", false, "allows for hashcracker to implment benchmarking where if the user stops the program with ctrl c it will write out the last guess of each thread to a file, \n\t when the program is restarted it will start from where it left off. must use it again when you restart.")
+	maxLength = flag.Int("l", 10, "specify the maximum length of each guess in a iteration")
+	noWordlist = flag.Bool("nW", false, "specify if you don't want to use a wordlist to crack the hash")
+	noIteration = flag.Bool("nI", false, "specify if you don't want to iterate through all possible combinations to crack the hash")
 
 	flag.Parse()
 
@@ -190,7 +196,7 @@ func parseCommandLine() (string, string, string, string, bool) {
 		return wordlist, salt, hash, hashlist, *benchmarking
 
 	} else {
-		fmt.Println("Usage: go run Cracker.go -t <hashlist.txt> -w <wordlist> -s <salt> -hash <hash>")
+		fmt.Println("Usage: go run Cracker.go -hash <hash> | -t <hashlist>")
 		fmt.Println("Must provide a hashlist or a hash to crack.")
 		os.Exit(1)
 	}
@@ -301,21 +307,31 @@ func detectionOfEncryptionScheme(encryptionScheme string) string {
 func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string, benchmarking bool) {
 	hashLen := len(hash)
 
-	// Create channel to signal the hash is found in the wordlist
-	hashFound := make(chan bool)
 
-	// Iterate all words in the wordlist to find the hashed word
-	cracked := iteratingWordList(wordlistPath, hash, salt, encryptionScheme, hashFound)
+	if !*noWordlist {
+		// Create channel to signal the hash is found in the wordlist
+		hashFound := make(chan bool)
 
-	if cracked {
-		return
+		// Iterate all words in the wordlist to find the hashed word
+		cracked := iteratingWordList(wordlistPath, hash, salt, encryptionScheme, hashFound)
+	
+
+		if cracked {
+			return
+		}
+
+		if !*noIteration {
+			println("No match found in the wordlist. Trying all possible combinations...\n")
+		} else{
+			println("No match found in the wordlist.")
+			return
+		}
 	}
 
-
-	println("No match found in the wordlist. Trying all possible combinations...\n")
-
-
-	iterateUsingCharacters(benchmarking, hash, hashLen, salt, encryptionScheme)	
+	if !*noIteration {
+		iterateUsingCharacters(benchmarking, hash, hashLen, salt, encryptionScheme)
+	}
+	
 }
 
 
@@ -525,7 +541,7 @@ func startFromBenchmarkWords(hash string, hashLen int, salt string, encryptionSc
 
 	startingCharacters := guessFromBenchmark
 
-    for length := len(guessFromBenchmark); length <= 10; length++ {
+	for length := len(guessFromBenchmark); length <= *maxLength; length++ {
         select {
         case <-stop:
             return // Quit signal received, terminate goroutine
@@ -602,10 +618,9 @@ func IteratingFromTheBeginning(stop chan bool, hashLen int, hash string, salt st
 // Function to iterate over all possible combinations of characters
 func iteratingOverAllCombinations(hashLen int, hash string, salt string, encryptionScheme string, startingCharacter string, stop chan bool, benchmarking bool, threadID int, isRestart bool) {
 
-    maxLength := 10
     initialLength := 1
     
-    for length := initialLength; length <= maxLength; length++ {
+    for length := initialLength; length <= *maxLength; length++ {
         select {
         case <-stop:
             return // Quit signal received, terminate goroutine
