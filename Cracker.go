@@ -489,6 +489,7 @@ func checkingToSeeIfWeHaveTriedToCrackThisHash(benchmarking bool, hash string, i
 func iterateOverCharacters(isDirectory bool, stop chan bool, hash string, hashLen int, salt string, encryptionScheme string, benchmarking bool) bool {
 	
 	if isDirectory { //If we have already tried to crack this hash then we will start where we left off
+		println("\nThis hash has already been attempted to be cracked. Resuming from where we left off.")
 		for i := 0; i < len(characters); i++ {
 			IteratingForBenchmark(stop, hash, hashLen, salt, encryptionScheme, benchmarking, i)
 		}
