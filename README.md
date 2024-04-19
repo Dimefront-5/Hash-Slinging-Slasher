@@ -2,6 +2,14 @@
 
 Cracker is a command-line tool written in Go for cracking hashes using a wordlist or through iterative brute force. We utilize go's multithreading along with a custom implementation of benchmarking. We can support salted hashes, shadow files, and hashlists that are delimited by newlines. WE also can detect what hashing algorithim is being used for a small subset of hashes based on the length of the hash and automatically crack it, so if a user has multiple different hash algorithms in a hashlist, it will be able to crack them all if they fall under the subset of hashes that we can detect.
 
+
+## Setup
+
+Please make sure you have Go installed on your machine. You can download it [here](https://golang.org/dl/).
+
+Download rockyou.txt from [here](https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt) and place it in the same directory as the executable.
+
+
 ## Usage
 
 ```bash

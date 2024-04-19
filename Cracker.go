@@ -490,6 +490,7 @@ func iterateOverCharacters(isDirectory bool, stop chan bool, hash string, hashLe
 	
 	if isDirectory { //If we have already tried to crack this hash then we will start where we left off
 		for i := 0; i < len(characters); i++ {
+			println("we see that there has been progress made on cracking this hash, we will start from where we left off.")
 			IteratingForBenchmark(stop, hash, hashLen, salt, encryptionScheme, benchmarking, i)
 		}
 	} else {
