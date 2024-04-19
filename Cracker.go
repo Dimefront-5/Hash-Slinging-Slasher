@@ -18,101 +18,102 @@ import (
 )
 
 var (
-	threadInfo0  string
-	threadInfo1  string
-	threadInfo2  string
-	threadInfo3  string
-	threadInfo4  string
-	threadInfo5  string
-	threadInfo6  string
-	threadInfo7  string
-	threadInfo8  string
-	threadInfo9  string
-	threadInfo10 string
-	threadInfo11 string
-	threadInfo12 string
-	threadInfo13 string
-	threadInfo14 string
-	threadInfo15 string
-	threadInfo16 string
-	threadInfo17 string
-	threadInfo18 string
-	threadInfo19 string
-	threadInfo20 string
-	threadInfo21 string
-	threadInfo22 string
-	threadInfo23 string
-	threadInfo24 string
-	threadInfo25 string
-	threadInfo26 string
-	threadInfo27 string
-	threadInfo28 string
-	threadInfo29 string
-	threadInfo30 string
-	threadInfo31 string
-	threadInfo32 string
-	threadInfo33 string
-	threadInfo34 string
-	threadInfo35 string
-	threadInfo36 string
-	threadInfo37 string
-	threadInfo38 string
-	threadInfo39 string
-	threadInfo40 string
-	threadInfo41 string
-	threadInfo42 string
-	threadInfo43 string
-	threadInfo44 string
-	threadInfo45 string
-	threadInfo46 string
-	threadInfo47 string
-	threadInfo48 string
-	threadInfo49 string
-	threadInfo50 string
-	threadInfo51 string
-	threadInfo52 string
-	threadInfo53 string
-	threadInfo54 string
-	threadInfo55 string
-	threadInfo56 string
-	threadInfo57 string
-	threadInfo58 string
-	threadInfo59 string
-	threadInfo60 string
-	threadInfo61 string
-	threadInfo62 string
-	threadInfo63 string
-	threadInfo64 string
-	threadInfo65 string
-	threadInfo66 string
-	threadInfo67 string
-	threadInfo68 string
-	threadInfo69 string
-	threadInfo70 string
-	threadInfo71 string
-	threadInfo72 string
-	threadInfo73 string
-	threadInfo74 string
-	threadInfo75 string
-	threadInfo76 string
-	threadInfo77 string
-	threadInfo78 string
-	threadInfo79 string
-	threadInfo80 string
-	threadInfo81 string
-	threadInfo82 string
-	threadInfo83 string
-	threadInfo84 string
-	threadInfo85 string
-	threadInfo86 string
-	threadInfo87 string
-	threadInfo88 string
-	threadInfo89 string
-	threadInfo90 string
-	threadInfo91 string
-	threadInfo92 string
-	threadInfo93 string
-	threadInfo94 string
+	maxLength   int
+	lastGuessOfThread0  string
+	lastGuessOfThread1  string
+	lastGuessOfThread2  string
+	lastGuessOfThread3  string
+	lastGuessOfThread4  string
+	lastGuessOfThread5  string
+	lastGuessOfThread6  string
+	lastGuessOfThread7  string
+	lastGuessOfThread8  string
+	lastGuessOfThread9  string
+	lastGuessOfThread10 string
+	lastGuessOfThread11 string
+	lastGuessOfThread12 string
+	lastGuessOfThread13 string
+	lastGuessOfThread14 string
+	lastGuessOfThread15 string
+	lastGuessOfThread16 string
+	lastGuessOfThread17 string
+	lastGuessOfThread18 string
+	lastGuessOfThread19 string
+	lastGuessOfThread20 string
+	lastGuessOfThread21 string
+	lastGuessOfThread22 string
+	lastGuessOfThread23 string
+	lastGuessOfThread24 string
+	lastGuessOfThread25 string
+	lastGuessOfThread26 string
+	lastGuessOfThread27 string
+	lastGuessOfThread28 string
+	lastGuessOfThread29 string
+	lastGuessOfThread30 string
+	lastGuessOfThread31 string
+	lastGuessOfThread32 string
+	lastGuessOfThread33 string
+	lastGuessOfThread34 string
+	lastGuessOfThread35 string
+	lastGuessOfThread36 string
+	lastGuessOfThread37 string
+	lastGuessOfThread38 string
+	lastGuessOfThread39 string
+	lastGuessOfThread40 string
+	lastGuessOfThread41 string
+	lastGuessOfThread42 string
+	lastGuessOfThread43 string
+	lastGuessOfThread44 string
+	lastGuessOfThread45 string
+	lastGuessOfThread46 string
+	lastGuessOfThread47 string
+	lastGuessOfThread48 string
+	lastGuessOfThread49 string
+	lastGuessOfThread50 string
+	lastGuessOfThread51 string
+	lastGuessOfThread52 string
+	lastGuessOfThread53 string
+	lastGuessOfThread54 string
+	lastGuessOfThread55 string
+	lastGuessOfThread56 string
+	lastGuessOfThread57 string
+	lastGuessOfThread58 string
+	lastGuessOfThread59 string
+	lastGuessOfThread60 string
+	lastGuessOfThread61 string
+	lastGuessOfThread62 string
+	lastGuessOfThread63 string
+	lastGuessOfThread64 string
+	lastGuessOfThread65 string
+	lastGuessOfThread66 string
+	lastGuessOfThread67 string
+	lastGuessOfThread68 string
+	lastGuessOfThread69 string
+	lastGuessOfThread70 string
+	lastGuessOfThread71 string
+	lastGuessOfThread72 string
+	lastGuessOfThread73 string
+	lastGuessOfThread74 string
+	lastGuessOfThread75 string
+	lastGuessOfThread76 string
+	lastGuessOfThread77 string
+	lastGuessOfThread78 string
+	lastGuessOfThread79 string
+	lastGuessOfThread80 string
+	lastGuessOfThread81 string
+	lastGuessOfThread82 string
+	lastGuessOfThread83 string
+	lastGuessOfThread84 string
+	lastGuessOfThread85 string
+	lastGuessOfThread86 string
+	lastGuessOfThread87 string
+	lastGuessOfThread88 string
+	lastGuessOfThread89 string
+	lastGuessOfThread90 string
+	lastGuessOfThread91 string
+	lastGuessOfThread92 string
+	lastGuessOfThread93 string
+	lastGuessOfThread94 string
 )
 
 const SHA256_LEN = 64
@@ -128,17 +129,25 @@ const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 func main() {
 
 	printAsciiArt()
+
 	// Parse command-line arguments
-	// Check if required arguments are provided
 	wordlist, salt, hash, hashlist, benchmarking := parseCommandLine()
 
 	start := time.Now()
+
 	// Determine if the hash is a file or a single hash
  	determineIfHashfile(hashlist, wordlist, salt, hash, "", benchmarking)
 
  	duration := time.Since(start)
  	println("Time elapsed: ", duration.Seconds(), "seconds")
 }
+
+
+
+
+
+
+
 
 // Inward Facing Functions
 
@@ -167,13 +176,14 @@ func parseCommandLine() (string, string, string, string, bool) {
 	flag.StringVar(&salt, "s", "", "specify a salt")
 	flag.StringVar(&hash, "hash", "", "specify a hash")
 	benchmarking := flag.Bool("b", false, "specify if you want benchmarking")
+
 	flag.Parse()
 
 	if wordlist == "" {
 		wordlist = "rockyou.txt"
 	}
 
-	if hashlist == "" && hash != "" {
+	if hashlist == "" && hash != "" {//Go will look for both flags to be filled so we want to make sure that we return if either are provided, and not if both are
 		return wordlist, salt, hash, hashlist, *benchmarking
 
 	} else if hashlist != "" && hash == "" {
@@ -185,8 +195,9 @@ func parseCommandLine() (string, string, string, string, bool) {
 		os.Exit(1)
 	}
 
-	return wordlist, salt, hash, hashlist, *benchmarking
+	return wordlist, salt, hash, hashlist, *benchmarking //Should never reach this point, but go requires a return
 }
+
 
 // Will determine if there is a file of hashes or just a single hash passed in
 func determineIfHashfile(hashlist string, wordlist string, salt string, hash string, resumingAtWord string, benchmarking bool) {
@@ -220,10 +231,29 @@ func listOfHashes(hashlist string, wordlist string, benchmarking bool) {
 		schemeChecking(encryptionScheme, hash)
 		findMatchingHash(hash, wordlist, salt, encryptionScheme, benchmarking)
 	}
+}
 
-	if err := scanner.Err(); err != nil {
-		println("Error Reading hashlist:", err)
-		os.Exit(1)
+
+// Will determine if the hash is salted or not and divide up the hash into its components
+func determineIfSalted(hash string, salt string) (string, string, string) {
+	encryptionSchemeIndex := 1
+	saltIndexWithoutYesCrypt := 2
+	saltIndexWithYesCrypt := 3
+	hashIndexWithoutYesCrypt := 3
+	hashIndexWithYesCrypt := 4
+
+
+
+	if strings.Index(hash, "$") != -1 { //If there is no dollar sign then it isn't a shadow file
+		
+		if strings.Split(hash, "$")[1] == "y" {
+			return strings.Split(hash, "$")[encryptionSchemeIndex], strings.Split(hash, "$")[saltIndexWithYesCrypt], strings.Split((strings.Split(hash, "$")[hashIndexWithYesCrypt]), ":")[0]
+		}
+
+		return strings.Split(hash, "$")[encryptionSchemeIndex], strings.Split(hash, "$")[saltIndexWithoutYesCrypt], strings.Split((strings.Split(hash, "$")[hashIndexWithoutYesCrypt]), ":")[0]
+
+	} else {
+		return "", salt, hash
 	}
 }
 
@@ -238,6 +268,10 @@ func schemeChecking(encryptionScheme string, hash string) {
 
 // Will determine the encryption scheme of the hash if it is a shadow file
 func detectionOfEncryptionScheme(encryptionScheme string) string {
+
+	if encryptionScheme == "" { //If the encryption scheme is empty then we know it is not a shadow file
+		return ""
+	}
 	if encryptionScheme == "1" {
 		return "md5"
 	}
@@ -253,21 +287,15 @@ func detectionOfEncryptionScheme(encryptionScheme string) string {
 	if encryptionScheme == "y" {
 		return "error"
 	}
-	return ""
 
+	return "error"
 }
 
-// Will determine if the hash is salted or not
-func determineIfSalted(hash string, salt string) (string, string, string) {
-	if strings.Index(hash, "$") != -1 {
-		if strings.Split(hash, "$")[1] == "y" {
-			return strings.Split(hash, "$")[1], strings.Split(hash, "$")[3], strings.Split((strings.Split(hash, "$")[4]), ":")[0]
-		}
-		return strings.Split(hash, "$")[1], strings.Split(hash, "$")[2], strings.Split((strings.Split(hash, "$")[3]), ":")[0]
-	} else {
-		return "", salt, hash
-	}
-}
+/*
+ - This is where we actually start to crack the hash
+*/
+
+
 
 // Our high level function that will iterate through our wordlist and check if the hash matches then will iterate through all possible combinations
 func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string, benchmarking bool) {
@@ -283,29 +311,105 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 		return
 	}
 
+
 	println("No match found in the wordlist. Trying all possible combinations...\n")
 
 
 	iterateUsingCharacters(benchmarking, hash, hashLen, salt, encryptionScheme)	
 }
 
-func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt string, encryptionScheme string) {
-	stop := make(chan bool)
 
+
+func iteratingWordList(wordlistPath string, hash string, salt string, encryptionScheme string, hashFound chan bool) bool {
+    // Read the wordlist file
+    wordlistBytes, err := ioutil.ReadFile(wordlistPath)
+    if err != nil {
+        println("Error reading wordlist:", err)
+        return false
+    }
+
+    // Convert the wordlist to a string array
+    wordlist := string(wordlistBytes)
+    allWords := strings.Split(wordlist, "\n")
+
+    var wg sync.WaitGroup
+    numOfParts := 20
+    wordsArray := divideIntoParts(allWords, numOfParts)
+
+
+    // Start goroutines
+    for _, words := range wordsArray {
+        wg.Add(1)
+        go findHashInWordlist(words, &wg, hashFound, hash, salt, encryptionScheme)
+    }
+
+    // Wait for all goroutines to finish or stop signal
+   	wg.Wait()
+	
+	close(hashFound)
+	return false
+}
+
+// Divide a slice of strings into n parts used for parallel processing of a wordlist
+func divideIntoParts(words []string, n int) [][]string {
+	var divided [][]string
+
+	size := len(words) / n
+	for i := 0; i < n; i++ {
+		start := i * size
+		end := start + size
+
+		// For the last slice, append the remainder elements
+		if i == n-1 {
+			end = len(words)
+		}
+		divided = append(divided, words[start:end])
+	}
+
+	return divided
+}
+
+
+
+func findHashInWordlist(words []string, wg *sync.WaitGroup, hashFound chan bool, hash string, salt string, encryptionScheme string) {
+    defer wg.Done()
+    for _, word := range words {
+        select {
+        case <-hashFound:
+            return // Stop goroutine
+        default:
+            hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
+            if hashedWord == hash {
+                println("\n\nHash cracked! The original word is:", word, "\n")
+                hashFound <- true
+				os.Exit(0) //If we don't exit here program crashes
+            }
+        }
+    }
+}
+
+/*
+	This section consists of Iterating through all possible combinations of characters
+*/
+
+
+// Will iterate through all possible combinations of characters to find the hash
+func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt string, encryptionScheme string) {
+	
+	
+	stop := make(chan bool)
+	
+	//Listens for ctrl c to stop the program and gracefully will stop it
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
+	
+	
 	isDirectory := false
-	if benchmarking == true {
-		if _, err := os.Stat("benchmarking/" + hash); os.IsNotExist(err) {
-			isDirectory = false
-			os.Mkdir("benchmarking/"+hash, 0777)
-		} else {
-			isDirectory = true
-		}
-	}
+	isDirectory = checkingToSeeIfWeHaveTriedToCrackThisHash(benchmarking, hash, isDirectory)
 
 	shouldReturn := iterateOverCharacters(isDirectory, stop, hash, hashLen, salt, encryptionScheme, benchmarking)
+	
 	if shouldReturn {
 		return 
 	}
@@ -315,7 +419,8 @@ func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt st
 	}()
 
 	select {
-	case <-sig:
+
+	case <-sig://if there was a ctrl c signal
 		fmt.Println("\n\nReceived termination signal. Quitting...")
 		if benchmarking == true {
 			writeToFileForAllThreads(hash)
@@ -323,49 +428,104 @@ func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt st
 		close(stop)
 
 	case <-stop:
-		writeToFileForAllThreads(hash)
+		if benchmarking == true {
+			writeToFileForAllThreads(hash)
+		}
 	}
 
 	return
 }
 
+//A function just used to track the time that has passed since we have started to crack the hash iteratively
+func timeTracker(quit chan bool) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	startTime := time.Now()
+
+	for {
+		select {
+		case <-ticker.C:
+			elapsedTime := time.Since(startTime)
+			fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
+		case <-quit:
+			return
+		}
+	}
+}
+
+
+func checkingToSeeIfWeHaveTriedToCrackThisHash(benchmarking bool, hash string, isDirectory bool) bool {
+	
+	if benchmarking == true { //We don't care about this if we aren't benchmarking so we won't write out anything and don't need to make the space for it
+		if _, err := os.Stat("benchmarking/" + hash); os.IsNotExist(err) {
+			isDirectory = false
+			os.Mkdir("benchmarking/"+hash, 0777)
+		} else {
+			isDirectory = true
+		}
+	}
+
+	return isDirectory
+}
+
+
 func iterateOverCharacters(isDirectory bool, stop chan bool, hash string, hashLen int, salt string, encryptionScheme string, benchmarking bool) bool {
-	if isDirectory {
+	
+	if isDirectory { //If we have already tried to crack this hash then we will start where we left off
 		for i := 0; i < len(characters); i++ {
-			go func(i int) {
-				select {
-				case <-stop:
-					return 
-				default:
-					startingCharacters := readInGuess(hash, string(characters[i]))
-					if startingCharacters == "" {
-						iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
-					} else {
-						restartBenchmarkForHashes(hash, hashLen, salt, encryptionScheme, startingCharacters, stop, benchmarking, i)
-					}
-				}
-			}(i)
+			IteratingForBenchmark(stop, hash, hashLen, salt, encryptionScheme, benchmarking, i)
 		}
 	} else {
 		for i := 0; i < len(characters); i++ {
-			go func(i int) {
-				select {
-				case <-stop:
-					return 
-				default:
-					iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
-				}
-			}(i)
+			IteratingFromTheBeginning(stop, hashLen, hash, salt, encryptionScheme, benchmarking, i)
 		}
 	}
 	return false
 }
 
+func IteratingForBenchmark(stop chan bool, hash string, hashLen int, salt string, encryptionScheme string, benchmarking bool, i int)  {
+	go func(i int) {
+		select {
+		case <-stop:
+			return 
+		default:
+			guessFromBenchmark := readInGuessFromRespectiveBenchmarkFile(hash, string(characters[i]))
+			
+			if guessFromBenchmark == "" { //If  for some reason the file is empty then we will start from the beginning
+				iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
+			} else {
+				startFromBenchmarkWords(hash, hashLen, salt, encryptionScheme, guessFromBenchmark, stop, benchmarking, i)
+			}
+		}
+	}(i)
 
-func restartBenchmarkForHashes(hash string, hashLen int, salt string, encryptionScheme string, startingCharacters string, stop chan bool, benchmarking bool, threadID int) {
+}
+
+func readInGuessFromRespectiveBenchmarkFile(hash string, startingCharacter string) string {
+	startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
+
+	file, err := os.Open("benchmarking/" + hash + "/benchmarkFor" + startingCharacter + ".txt")
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	scanner.Scan()
+	return scanner.Text()
+}
+
+
+func startFromBenchmarkWords(hash string, hashLen int, salt string, encryptionScheme string, guessFromBenchmark string, stop chan bool, benchmarking bool, threadID int) {
     
-    storeGuessInThreadInfo(threadID, startingCharacters)
-    for length := len(startingCharacters); length <= 10; length++ {
+	//In case for some reason the program gets killed before any guesses are made, this will preserve the last guess
+    storeGuessInlastGuessOfThread(threadID, guessFromBenchmark)
+
+	startingCharacters := guessFromBenchmark
+
+    for length := len(guessFromBenchmark); length <= 10; length++ {
         select {
         case <-stop:
             return // Quit signal received, terminate goroutine
@@ -380,8 +540,10 @@ func restartBenchmarkForHashes(hash string, hashLen int, salt string, encryption
                     close(stop) // Signal other goroutines to stop
                     return      // Terminate goroutine if hash is cracked
                 }
-                storeGuessInThreadInfo(threadID, guess)
+                storeGuessInlastGuessOfThread(threadID, guess)
             }
+
+			//to keep this from running forever we need to add on to the starting characters
             startingCharacters = string(startingCharacters[0]) + strings.Repeat("a", len(startingCharacters))
         }
     }
@@ -420,49 +582,21 @@ func generatePermutationsHelper(input string, current string, result chan<- stri
 }
 
 
-func writeToFile(startingCharacter string, hash string, guess string) {
+/*
 
-	if startingCharacter != "answer" {
-		startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
-		err := os.WriteFile("benchmarking/" + hash +"/benchmarkFor" + startingCharacter + ".txt", []byte(guess), 0644)
-		if err != nil {
-			println("Error writing to file: ", err)
-			os.Exit(1)
-		}
-	} else {
-		err := os.WriteFile("benchmarking/" + hash +"/" + startingCharacter + ".txt", []byte(guess), 0644)
-		if err != nil {
-			println("Error writing to file: ", err)
-			os.Exit(1)
-		}
-	}
+	This section is about Iterating through all possible combinations of characters
 
-	
-}
+*/
 
-func checkForInvalidFileLetters(startingCharacter string) bool {
-	if startingCharacter == "/" || startingCharacter == ":" || startingCharacter == "*" || startingCharacter == "?" || startingCharacter == "\"" || startingCharacter == "<" || startingCharacter == ">" || startingCharacter == "|" || startingCharacter == "\\" || startingCharacter == " " {
-		return true
-	}
-	return false
-
-}
-
-func timeTracker(quit chan bool) {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	startTime := time.Now()
-
-	for {
+func IteratingFromTheBeginning(stop chan bool, hashLen int, hash string, salt string, encryptionScheme string, benchmarking bool, i int) {
+	go func(i int) {
 		select {
-		case <-ticker.C:
-			elapsedTime := time.Since(startTime)
-			fmt.Printf("\r\033[KTime Wasted Iterative Cracking: %s", elapsedTime)
-		case <-quit:
-			return
+		case <-stop:
+			return 
+		default:
+			iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
 		}
-	}
+	}(i)
 }
 
 // Function to iterate over all possible combinations of characters
@@ -476,11 +610,11 @@ func iteratingOverAllCombinations(hashLen int, hash string, salt string, encrypt
         case <-stop:
             return // Quit signal received, terminate goroutine
         default:
-            for guess := range generateCombinations(characters, length, startingCharacter) {
+            for guess := range generatePermutationsFromBeginning(characters, length, startingCharacter) {
                 hashedGuess := calculateWordHash(hashLen, guess, salt, encryptionScheme)
 
                 if benchmarking == true {
-                    storeGuessInThreadInfo(threadID, guess)
+                    storeGuessInlastGuessOfThread(threadID, guess)
                 }
 
                 if hash == hashedGuess {
@@ -494,39 +628,33 @@ func iteratingOverAllCombinations(hashLen int, hash string, salt string, encrypt
     }
 }
 
-func readInGuess(hash string, startingCharacter string) string {
-	startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
-
-	file, err := os.Open("benchmarking/" + hash + "/benchmarkFor" + startingCharacter + ".txt")
-	if err != nil {
-		return ""
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	scanner.Scan()
-	return scanner.Text()
-}
-
-func generateCombinations(characters string, length int, startingCharacter string) <-chan string {
+func generatePermutationsFromBeginning(characters string, length int, startingCharacter string) <-chan string {
     result := make(chan string)
     go func() {
         defer close(result)
-        generateCombinationsHelper(characters, length, startingCharacter, result)
+        generatePermutationsFromBeginningHelper(characters, length, startingCharacter, result)
     }()
     return result
 }
 
-func generateCombinationsHelper(characters string, length int, current string, result chan<- string) {
+func generatePermutationsFromBeginningHelper(characters string, length int, current string, result chan<- string) {
     if length == 0 {
         result <- current
         return
     }
     for _, char := range characters {
-        generateCombinationsHelper(characters, length-1, current+string(char), result)
+        generatePermutationsFromBeginningHelper(characters, length-1, current+string(char), result)
     }
 }
+
+
+
+/*
+	- This section is how we can assume the hash function used based on the length of the hash and where we write out to files our guesses
+*/
+
+
+
 
 // Calculate the hash of a given word,
 // the hash function to be used is based on the length of the hash
@@ -538,10 +666,15 @@ func calculateWordHash(hashLen int, word string, salt string, encryptionScheme s
 	}
 
 	if encryptionScheme != "" {
-		hashedWord = hashWord(word, encryptionScheme, salt)
+		hashedWord = hashWordOnEncryptionScheme(word, encryptionScheme, salt)
 		return hashedWord
 	}
 
+	hashedWord = detectHashBasedOnLength(hashLen, hashedWord, word)
+	return hashedWord
+}
+
+func detectHashBasedOnLength(hashLen int, hashedWord string, word string) string {
 	switch hashLen {
 	case SHA256_LEN:
 		hashedWord = fmt.Sprintf("%x", sha256.Sum256([]byte(word)))
@@ -562,11 +695,11 @@ func calculateWordHash(hashLen int, word string, salt string, encryptionScheme s
 	return hashedWord
 }
 
-// Calculate the hash of a given word
-func hashWord(word string, encryptionScheme string, salt string) string {
+// Calculate the hash of a given word from a encryption scheme
+func hashWordOnEncryptionScheme(word string, encryptionScheme string, salt string) string {
 	var hashedWord string
 
-	switch encryptionScheme {
+	switch encryptionScheme { //we only support certain shadow file encryption schemes
 	case "md5":
 		hashedWord = fmt.Sprintf("%x", md5.Sum([]byte(word)))
 	case "sha256":
@@ -577,273 +710,232 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 	return hashedWord
 }
 
-// Divide a slice of strings into n parts used for parallel processing of a wordlist
-func divideIntoParts(words []string, n int) [][]string {
-	var divided [][]string
 
-	size := len(words) / n
-	for i := 0; i < n; i++ {
-		start := i * size
-		end := start + size
+func writeToFile(startingCharacter string, hash string, guess string) {
 
-		// For the last slice, append the remainder elements
-		if i == n-1 {
-			end = len(words)
+	if startingCharacter != "answer" {
+
+		startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
+		err := os.WriteFile("benchmarking/" + hash +"/benchmarkFor" + startingCharacter + ".txt", []byte(guess), 0644)
+		if err != nil {
+			println("Error writing to file: ", err)
+			os.Exit(1)
 		}
 
-		divided = append(divided, words[start:end])
+	} else {//do a special file for the answer
+
+		err := os.WriteFile("benchmarking/" + hash +"/" + startingCharacter + ".txt", []byte(guess), 0644)
+		if err != nil {
+			println("Error writing to file: ", err)
+			os.Exit(1)
+		}
 	}
-
-	return divided
-}
-
-func findHashInParts(words []string, wg *sync.WaitGroup, hashFound chan bool, hash string, salt string, encryptionScheme string) {
-    defer wg.Done()
-    for _, word := range words {
-        select {
-        case <-hashFound:
-            return // Stop goroutine
-        default:
-            hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
-            if hashedWord == hash {
-                println("\n\nHash cracked! The original word is:", word, "\n")
-                hashFound <- true
-				os.Exit(0) //If we don't exit here program crashes
-            }
-        }
-    }
-}
-
-func iteratingWordList(wordlistPath string, hash string, salt string, encryptionScheme string, hashFound chan bool) bool {
-    // Read the wordlist file
-    wordlistBytes, err := ioutil.ReadFile(wordlistPath)
-    if err != nil {
-        println("Error reading wordlist:", err)
-        return false
-    }
-
-    // Convert the wordlist to a string array
-    wordlist := string(wordlistBytes)
-    allWords := strings.Split(wordlist, "\n")
-
-    var wg sync.WaitGroup
-    numOfParts := 20
-    wordsArray := divideIntoParts(allWords, numOfParts)
-
-
-    // Start goroutines
-    for _, words := range wordsArray {
-        wg.Add(1)
-        go findHashInParts(words, &wg, hashFound, hash, salt, encryptionScheme)
-    }
-
-    // Wait for all goroutines to finish or stop signal
-   	wg.Wait()
 	
-	close(hashFound)
-	return false
 }
 
+func checkForInvalidFileLetters(startingCharacter string) bool {
+	if startingCharacter == "/" || startingCharacter == ":" || startingCharacter == "*" || startingCharacter == "?" || startingCharacter == "\"" || startingCharacter == "<" || startingCharacter == ">" || startingCharacter == "|" || startingCharacter == "\\" || startingCharacter == " " {
+		return true
+	}
+	return false
 
+}
 
+// This is where the maddeny of how to efficeintly implment benchmarking with threads comes in I made chatGPT do this because of the montotony of it
 
-
-
-// This is where the maddeny of how to efficeintly implment benchmarking with threads comes in
-
-
-func storeGuessInThreadInfo(threadID int, guess string) {
+// This is the function that will be called to write the last guess of each thread to athe global variable
+func storeGuessInlastGuessOfThread(threadID int, guess string) {
 	switch threadID {
 	case 0:
-		threadInfo0 = guess
+		lastGuessOfThread0 = guess
 	case 1:
-		threadInfo1 = guess
+		lastGuessOfThread1 = guess
 	case 2:
-		threadInfo2 = guess
+		lastGuessOfThread2 = guess
 	case 3:
-		threadInfo3 = guess
+		lastGuessOfThread3 = guess
 	case 4:
-		threadInfo4 = guess
+		lastGuessOfThread4 = guess
 	case 5:
-		threadInfo5 = guess
+		lastGuessOfThread5 = guess
 	case 6:
-		threadInfo6 = guess
+		lastGuessOfThread6 = guess
 	case 7:
-		threadInfo7 = guess
+		lastGuessOfThread7 = guess
 	case 8:
-		threadInfo8 = guess
+		lastGuessOfThread8 = guess
 	case 9:
-		threadInfo9 = guess
+		lastGuessOfThread9 = guess
 	case 10:
-		threadInfo10 = guess
+		lastGuessOfThread10 = guess
 	case 11:
-		threadInfo11 = guess
+		lastGuessOfThread11 = guess
 	case 12:
-		threadInfo12 = guess
+		lastGuessOfThread12 = guess
 	case 13:
-		threadInfo13 = guess
+		lastGuessOfThread13 = guess
 	case 14:
-		threadInfo14 = guess
+		lastGuessOfThread14 = guess
 	case 15:
-		threadInfo15 = guess
+		lastGuessOfThread15 = guess
 	case 16:
-		threadInfo16 = guess
+		lastGuessOfThread16 = guess
 	case 17:
-		threadInfo17 = guess
+		lastGuessOfThread17 = guess
 	case 18:
-		threadInfo18 = guess
+		lastGuessOfThread18 = guess
 	case 19:
-		threadInfo19 = guess
+		lastGuessOfThread19 = guess
 	case 20:
-		threadInfo20 = guess
+		lastGuessOfThread20 = guess
 	case 21:
-		threadInfo21 = guess
+		lastGuessOfThread21 = guess
 	case 22:
-		threadInfo22 = guess
+		lastGuessOfThread22 = guess
 	case 23:
-		threadInfo23 = guess
+		lastGuessOfThread23 = guess
 	case 24:
-		threadInfo24 = guess
+		lastGuessOfThread24 = guess
 	case 25:
-		threadInfo25 = guess
+		lastGuessOfThread25 = guess
 	case 26:
-		threadInfo26 = guess
+		lastGuessOfThread26 = guess
 	case 27:
-		threadInfo27 = guess
+		lastGuessOfThread27 = guess
 	case 28:
-		threadInfo28 = guess
+		lastGuessOfThread28 = guess
 	case 29:
-		threadInfo29 = guess
+		lastGuessOfThread29 = guess
 	case 30:
-		threadInfo30 = guess
+		lastGuessOfThread30 = guess
 	case 31:
-		threadInfo31 = guess
+		lastGuessOfThread31 = guess
 	case 32:
-		threadInfo32 = guess
+		lastGuessOfThread32 = guess
 	case 33:
-		threadInfo33 = guess
+		lastGuessOfThread33 = guess
 	case 34:
-		threadInfo34 = guess
+		lastGuessOfThread34 = guess
 	case 35:
-		threadInfo35 = guess
+		lastGuessOfThread35 = guess
 	case 36:
-		threadInfo36 = guess
+		lastGuessOfThread36 = guess
 	case 37:
-		threadInfo37 = guess
+		lastGuessOfThread37 = guess
 	case 38:
-		threadInfo38 = guess
+		lastGuessOfThread38 = guess
 	case 39:
-		threadInfo39 = guess
+		lastGuessOfThread39 = guess
 	case 40:
-		threadInfo40 = guess
+		lastGuessOfThread40 = guess
 	case 41:
-		threadInfo41 = guess
+		lastGuessOfThread41 = guess
 	case 42:
-		threadInfo42 = guess
+		lastGuessOfThread42 = guess
 	case 43:
-		threadInfo43 = guess
+		lastGuessOfThread43 = guess
 	case 44:
-		threadInfo44 = guess
+		lastGuessOfThread44 = guess
 	case 45:
-		threadInfo45 = guess
+		lastGuessOfThread45 = guess
 	case 46:
-		threadInfo46 = guess
+		lastGuessOfThread46 = guess
 	case 47:
-		threadInfo47 = guess
+		lastGuessOfThread47 = guess
 	case 48:
-		threadInfo48 = guess
+		lastGuessOfThread48 = guess
 	case 49:
-		threadInfo49 = guess
+		lastGuessOfThread49 = guess
 	case 50:
-		threadInfo50 = guess
+		lastGuessOfThread50 = guess
 	case 51:
-		threadInfo51 = guess
+		lastGuessOfThread51 = guess
 	case 52:
-		threadInfo52 = guess
+		lastGuessOfThread52 = guess
 	case 53:
-		threadInfo53 = guess
+		lastGuessOfThread53 = guess
 	case 54:
-		threadInfo54 = guess
+		lastGuessOfThread54 = guess
 	case 55:
-		threadInfo55 = guess
+		lastGuessOfThread55 = guess
 	case 56:
-		threadInfo56 = guess
+		lastGuessOfThread56 = guess
 	case 57:
-		threadInfo57 = guess
+		lastGuessOfThread57 = guess
 	case 58:
-		threadInfo58 = guess
+		lastGuessOfThread58 = guess
 	case 59:
-		threadInfo59 = guess
+		lastGuessOfThread59 = guess
 	case 60:
-		threadInfo60 = guess
+		lastGuessOfThread60 = guess
 	case 61:
-		threadInfo61 = guess
+		lastGuessOfThread61 = guess
 	case 62:
-		threadInfo62 = guess
+		lastGuessOfThread62 = guess
 	case 63:
-		threadInfo63 = guess
+		lastGuessOfThread63 = guess
 	case 64:
-		threadInfo64 = guess
+		lastGuessOfThread64 = guess
 	case 65:
-		threadInfo65 = guess
+		lastGuessOfThread65 = guess
 	case 66:
-		threadInfo66 = guess
+		lastGuessOfThread66 = guess
 	case 67:
-		threadInfo67 = guess
+		lastGuessOfThread67 = guess
 	case 68:
-		threadInfo68 = guess
+		lastGuessOfThread68 = guess
 	case 69:
-		threadInfo69 = guess
+		lastGuessOfThread69 = guess
 	case 70:
-		threadInfo70 = guess
+		lastGuessOfThread70 = guess
 	case 71:
-		threadInfo71 = guess
+		lastGuessOfThread71 = guess
 	case 72:
-		threadInfo72 = guess
+		lastGuessOfThread72 = guess
 	case 73:
-		threadInfo73 = guess
+		lastGuessOfThread73 = guess
 	case 74:
-		threadInfo74 = guess
+		lastGuessOfThread74 = guess
 	case 75:
-		threadInfo75 = guess
+		lastGuessOfThread75 = guess
 	case 76:
-		threadInfo76 = guess
+		lastGuessOfThread76 = guess
 	case 77:
-		threadInfo77 = guess
+		lastGuessOfThread77 = guess
 	case 78:
-		threadInfo78 = guess
+		lastGuessOfThread78 = guess
 	case 79:
-		threadInfo79 = guess
+		lastGuessOfThread79 = guess
 	case 80:
-		threadInfo80 = guess
+		lastGuessOfThread80 = guess
 	case 81:
-		threadInfo81 = guess
+		lastGuessOfThread81 = guess
 	case 82:
-		threadInfo82 = guess
+		lastGuessOfThread82 = guess
 	case 83:
-		threadInfo83 = guess
+		lastGuessOfThread83 = guess
 	case 84:
-		threadInfo84 = guess
+		lastGuessOfThread84 = guess
 	case 85:
-		threadInfo85 = guess
+		lastGuessOfThread85 = guess
 	case 86:
-		threadInfo86 = guess
+		lastGuessOfThread86 = guess
 	case 87:
-		threadInfo87 = guess
+		lastGuessOfThread87 = guess
 	case 88:
-		threadInfo88 = guess
+		lastGuessOfThread88 = guess
 	case 89:
-		threadInfo89 = guess
+		lastGuessOfThread89 = guess
 	case 90:
-		threadInfo90 = guess
+		lastGuessOfThread90 = guess
 	case 91:
-		threadInfo91 = guess
+		lastGuessOfThread91 = guess
 	case 92:
-		threadInfo92 = guess
+		lastGuessOfThread92 = guess
 	case 93:
-		threadInfo93 = guess
+		lastGuessOfThread93 = guess
 	case 94:
-		threadInfo94 = guess
+		lastGuessOfThread94 = guess
 	default:
 		fmt.Println("Invalid thread ID:", threadID)
 	}
@@ -857,7 +949,7 @@ func storeGuessInThreadInfo(threadID int, guess string) {
 
 
 
-
+// This is the function that will be called to write the last guess of each thread to a file
 func writeToFileForAllThreads(hash string) {
 	var characters = []string{
 		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
@@ -867,99 +959,99 @@ func writeToFileForAllThreads(hash string) {
 		"[", "\\", "]", "^", "_", "`", "{", "|", "}", "~",
 	}
 
-	writeToFile(characters[0], hash, threadInfo0)
-	writeToFile(characters[1], hash, threadInfo1)
-	writeToFile(characters[2], hash, threadInfo2)
-	writeToFile(characters[3], hash, threadInfo3)
-	writeToFile(characters[4], hash, threadInfo4)
-	writeToFile(characters[5], hash, threadInfo5)
-	writeToFile(characters[6], hash, threadInfo6)
-	writeToFile(characters[7], hash, threadInfo7)
-	writeToFile(characters[8], hash, threadInfo8)
-	writeToFile(characters[9], hash, threadInfo9)
-	writeToFile(characters[10], hash, threadInfo10)
-	writeToFile(characters[11], hash, threadInfo11)
-	writeToFile(characters[12], hash, threadInfo12)
-	writeToFile(characters[13], hash, threadInfo13)
-	writeToFile(characters[14], hash, threadInfo14)
-	writeToFile(characters[15], hash, threadInfo15)
-	writeToFile(characters[16], hash, threadInfo16)
-	writeToFile(characters[17], hash, threadInfo17)
-	writeToFile(characters[18], hash, threadInfo18)
-	writeToFile(characters[19], hash, threadInfo19)
-	writeToFile(characters[20], hash, threadInfo20)
-	writeToFile(characters[21], hash, threadInfo21)
-	writeToFile(characters[22], hash, threadInfo22)
-	writeToFile(characters[23], hash, threadInfo23)
-	writeToFile(characters[24], hash, threadInfo24)
-	writeToFile(characters[25], hash, threadInfo25)
-	writeToFile(characters[26], hash, threadInfo26)
-	writeToFile(characters[27], hash, threadInfo27)
-	writeToFile(characters[28], hash, threadInfo28)
-	writeToFile(characters[29], hash, threadInfo29)
-	writeToFile(characters[30], hash, threadInfo30)
-	writeToFile(characters[31], hash, threadInfo31)
-	writeToFile(characters[32], hash, threadInfo32)
-	writeToFile(characters[33], hash, threadInfo33)
-	writeToFile(characters[34], hash, threadInfo34)
-	writeToFile(characters[35], hash, threadInfo35)
-	writeToFile(characters[36], hash, threadInfo36)
-	writeToFile(characters[37], hash, threadInfo37)
-	writeToFile(characters[38], hash, threadInfo38)
-	writeToFile(characters[39], hash, threadInfo39)
-	writeToFile(characters[40], hash, threadInfo40)
-	writeToFile(characters[41], hash, threadInfo41)
-	writeToFile(characters[42], hash, threadInfo42)
-	writeToFile(characters[43], hash, threadInfo43)
-	writeToFile(characters[44], hash, threadInfo44)
-	writeToFile(characters[45], hash, threadInfo45)
-	writeToFile(characters[46], hash, threadInfo46)
-	writeToFile(characters[47], hash, threadInfo47)
-	writeToFile(characters[48], hash, threadInfo48)
-	writeToFile(characters[49], hash, threadInfo49)
-	writeToFile(characters[50], hash, threadInfo50)
-	writeToFile(characters[51], hash, threadInfo51)
-	writeToFile(characters[52], hash, threadInfo52)
-	writeToFile(characters[53], hash, threadInfo53)
-	writeToFile(characters[54], hash, threadInfo54)
-	writeToFile(characters[55], hash, threadInfo55)
-	writeToFile(characters[56], hash, threadInfo56)
-	writeToFile(characters[57], hash, threadInfo57)
-	writeToFile(characters[58], hash, threadInfo58)
-	writeToFile(characters[59], hash, threadInfo59)
-	writeToFile(characters[60], hash, threadInfo60)
-	writeToFile(characters[61], hash, threadInfo61)
-	writeToFile(characters[62], hash, threadInfo62)
-	writeToFile(characters[63], hash, threadInfo63)
-	writeToFile(characters[64], hash, threadInfo64)
-	writeToFile(characters[65], hash, threadInfo65)
-	writeToFile(characters[66], hash, threadInfo66)
-	writeToFile(characters[67], hash, threadInfo67)
-	writeToFile(characters[68], hash, threadInfo68)
-	writeToFile(characters[69], hash, threadInfo69)
-	writeToFile(characters[70], hash, threadInfo70)
-	writeToFile(characters[71], hash, threadInfo71)
-	writeToFile(characters[72], hash, threadInfo72)
-	writeToFile(characters[73], hash, threadInfo73)
-	writeToFile(characters[74], hash, threadInfo74)
-	writeToFile(characters[75], hash, threadInfo75)
-	writeToFile(characters[76], hash, threadInfo76)
-	writeToFile(characters[77], hash, threadInfo77)
-	writeToFile(characters[78], hash, threadInfo78)
-	writeToFile(characters[79], hash, threadInfo79)
-	writeToFile(characters[80], hash, threadInfo80)
-	writeToFile(characters[81], hash, threadInfo81)
-	writeToFile(characters[82], hash, threadInfo82)
-	writeToFile(characters[83], hash, threadInfo83)
-	writeToFile(characters[84], hash, threadInfo84)
-	writeToFile(characters[85], hash, threadInfo85)
-	writeToFile(characters[86], hash, threadInfo86)
-	writeToFile(characters[87], hash, threadInfo87)
-	writeToFile(characters[88], hash, threadInfo88)
-	writeToFile(characters[89], hash, threadInfo89)
-	writeToFile(characters[90], hash, threadInfo90)
-	writeToFile(characters[91], hash, threadInfo91)
-	writeToFile(characters[92], hash, threadInfo92)
-	writeToFile(characters[93], hash, threadInfo93)
-	writeToFile(characters[94], hash, threadInfo94)
+	writeToFile(characters[0], hash, lastGuessOfThread0)
+	writeToFile(characters[1], hash, lastGuessOfThread1)
+	writeToFile(characters[2], hash, lastGuessOfThread2)
+	writeToFile(characters[3], hash, lastGuessOfThread3)
+	writeToFile(characters[4], hash, lastGuessOfThread4)
+	writeToFile(characters[5], hash, lastGuessOfThread5)
+	writeToFile(characters[6], hash, lastGuessOfThread6)
+	writeToFile(characters[7], hash, lastGuessOfThread7)
+	writeToFile(characters[8], hash, lastGuessOfThread8)
+	writeToFile(characters[9], hash, lastGuessOfThread9)
+	writeToFile(characters[10], hash, lastGuessOfThread10)
+	writeToFile(characters[11], hash, lastGuessOfThread11)
+	writeToFile(characters[12], hash, lastGuessOfThread12)
+	writeToFile(characters[13], hash, lastGuessOfThread13)
+	writeToFile(characters[14], hash, lastGuessOfThread14)
+	writeToFile(characters[15], hash, lastGuessOfThread15)
+	writeToFile(characters[16], hash, lastGuessOfThread16)
+	writeToFile(characters[17], hash, lastGuessOfThread17)
+	writeToFile(characters[18], hash, lastGuessOfThread18)
+	writeToFile(characters[19], hash, lastGuessOfThread19)
+	writeToFile(characters[20], hash, lastGuessOfThread20)
+	writeToFile(characters[21], hash, lastGuessOfThread21)
+	writeToFile(characters[22], hash, lastGuessOfThread22)
+	writeToFile(characters[23], hash, lastGuessOfThread23)
+	writeToFile(characters[24], hash, lastGuessOfThread24)
+	writeToFile(characters[25], hash, lastGuessOfThread25)
+	writeToFile(characters[26], hash, lastGuessOfThread26)
+	writeToFile(characters[27], hash, lastGuessOfThread27)
+	writeToFile(characters[28], hash, lastGuessOfThread28)
+	writeToFile(characters[29], hash, lastGuessOfThread29)
+	writeToFile(characters[30], hash, lastGuessOfThread30)
+	writeToFile(characters[31], hash, lastGuessOfThread31)
+	writeToFile(characters[32], hash, lastGuessOfThread32)
+	writeToFile(characters[33], hash, lastGuessOfThread33)
+	writeToFile(characters[34], hash, lastGuessOfThread34)
+	writeToFile(characters[35], hash, lastGuessOfThread35)
+	writeToFile(characters[36], hash, lastGuessOfThread36)
+	writeToFile(characters[37], hash, lastGuessOfThread37)
+	writeToFile(characters[38], hash, lastGuessOfThread38)
+	writeToFile(characters[39], hash, lastGuessOfThread39)
+	writeToFile(characters[40], hash, lastGuessOfThread40)
+	writeToFile(characters[41], hash, lastGuessOfThread41)
+	writeToFile(characters[42], hash, lastGuessOfThread42)
+	writeToFile(characters[43], hash, lastGuessOfThread43)
+	writeToFile(characters[44], hash, lastGuessOfThread44)
+	writeToFile(characters[45], hash, lastGuessOfThread45)
+	writeToFile(characters[46], hash, lastGuessOfThread46)
+	writeToFile(characters[47], hash, lastGuessOfThread47)
+	writeToFile(characters[48], hash, lastGuessOfThread48)
+	writeToFile(characters[49], hash, lastGuessOfThread49)
+	writeToFile(characters[50], hash, lastGuessOfThread50)
+	writeToFile(characters[51], hash, lastGuessOfThread51)
+	writeToFile(characters[52], hash, lastGuessOfThread52)
+	writeToFile(characters[53], hash, lastGuessOfThread53)
+	writeToFile(characters[54], hash, lastGuessOfThread54)
+	writeToFile(characters[55], hash, lastGuessOfThread55)
+	writeToFile(characters[56], hash, lastGuessOfThread56)
+	writeToFile(characters[57], hash, lastGuessOfThread57)
+	writeToFile(characters[58], hash, lastGuessOfThread58)
+	writeToFile(characters[59], hash, lastGuessOfThread59)
+	writeToFile(characters[60], hash, lastGuessOfThread60)
+	writeToFile(characters[61], hash, lastGuessOfThread61)
+	writeToFile(characters[62], hash, lastGuessOfThread62)
+	writeToFile(characters[63], hash, lastGuessOfThread63)
+	writeToFile(characters[64], hash, lastGuessOfThread64)
+	writeToFile(characters[65], hash, lastGuessOfThread65)
+	writeToFile(characters[66], hash, lastGuessOfThread66)
+	writeToFile(characters[67], hash, lastGuessOfThread67)
+	writeToFile(characters[68], hash, lastGuessOfThread68)
+	writeToFile(characters[69], hash, lastGuessOfThread69)
+	writeToFile(characters[70], hash, lastGuessOfThread70)
+	writeToFile(characters[71], hash, lastGuessOfThread71)
+	writeToFile(characters[72], hash, lastGuessOfThread72)
+	writeToFile(characters[73], hash, lastGuessOfThread73)
+	writeToFile(characters[74], hash, lastGuessOfThread74)
+	writeToFile(characters[75], hash, lastGuessOfThread75)
+	writeToFile(characters[76], hash, lastGuessOfThread76)
+	writeToFile(characters[77], hash, lastGuessOfThread77)
+	writeToFile(characters[78], hash, lastGuessOfThread78)
+	writeToFile(characters[79], hash, lastGuessOfThread79)
+	writeToFile(characters[80], hash, lastGuessOfThread80)
+	writeToFile(characters[81], hash, lastGuessOfThread81)
+	writeToFile(characters[82], hash, lastGuessOfThread82)
+	writeToFile(characters[83], hash, lastGuessOfThread83)
+	writeToFile(characters[84], hash, lastGuessOfThread84)
+	writeToFile(characters[85], hash, lastGuessOfThread85)
+	writeToFile(characters[86], hash, lastGuessOfThread86)
+	writeToFile(characters[87], hash, lastGuessOfThread87)
+	writeToFile(characters[88], hash, lastGuessOfThread88)
+	writeToFile(characters[89], hash, lastGuessOfThread89)
+	writeToFile(characters[90], hash, lastGuessOfThread90)
+	writeToFile(characters[91], hash, lastGuessOfThread91)
+	writeToFile(characters[92], hash, lastGuessOfThread92)
+	writeToFile(characters[93], hash, lastGuessOfThread93)
+	writeToFile(characters[94], hash, lastGuessOfThread94)
 }
