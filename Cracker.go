@@ -14,6 +14,7 @@ import (
 	"time"
 	"os/signal"
 	"syscall"
+	"sync"
 )
 
 var (
@@ -131,8 +132,12 @@ func main() {
 	// Check if required arguments are provided
 	wordlist, salt, hash, hashlist, benchmarking := parseCommandLine()
 
+	start := time.Now()
 	// Determine if the hash is a file or a single hash
-	determineIfHashfile(hashlist, wordlist, salt, hash, "", benchmarking)
+ 	determineIfHashfile(hashlist, wordlist, salt, hash, "", benchmarking)
+
+ 	duration := time.Since(start)
+ 	println("Time elapsed: ", duration.Seconds(), "seconds")
 }
 
 // Inward Facing Functions
@@ -268,34 +273,28 @@ func determineIfSalted(hash string, salt string) (string, string, string) {
 func findMatchingHash(hash string, wordlistPath string, salt string, encryptionScheme string, benchmarking bool) {
 	hashLen := len(hash)
 
-	// Read the wordlist file
-	wordlistBytes, err := ioutil.ReadFile(wordlistPath)
-	if err != nil {
-		println("Error reading wordlist:", err)
+	// Create channel to signal the hash is found in the wordlist
+	hashFound := make(chan bool)
+
+	// Iterate all words in the wordlist to find the hashed word
+	cracked := iteratingWordList(wordlistPath, hash, salt, encryptionScheme, hashFound)
+
+	if cracked {
 		return
-	}
-
-	// Convert the wordlist to a string array
-	wordlist := string(wordlistBytes)
-	words := strings.Split(wordlist, "\n")
-
-	for _, word := range words {
-		hashedWord := calculateWordHash(hashLen, word, salt, encryptionScheme)
-		if hashedWord == hash {
-			println("\n\nHash cracked! The original word is:", word, "\n")
-			return
-		}
 	}
 
 	println("No match found in the wordlist. Trying all possible combinations...\n")
 
-	//Create a channel to signal to other go rotuines that the hash has been cracked
+
+	iterateUsingCharacters(benchmarking, hash, hashLen, salt, encryptionScheme)	
+}
+
+func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt string, encryptionScheme string) {
 	stop := make(chan bool)
-	// Listen for Ctrl+C (SIGINT) and termination signals
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
-	// Keyboard input capturing goroutine
 	isDirectory := false
 	if benchmarking == true {
 		if _, err := os.Stat("benchmarking/" + hash); os.IsNotExist(err) {
@@ -306,29 +305,9 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 		}
 	}
 
-	if isDirectory {
-		for i := 0; i < len(characters); i++ {
-			go func(i int) {
-				select {
-				case <-stop:
-					return // Quit signal received, terminate goroutine
-				default:
-					startingCharacters := readInGuess(hash, string(characters[i]))
-					iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, startingCharacters, stop, benchmarking, i, true)
-				}
-			}(i)
-		}
-	} else {
-		for i := 0; i < len(characters); i++ {
-			go func(i int) {
-				select {
-				case <-stop:
-					return // Quit signal received, terminate goroutine
-				default:
-					iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
-				}
-			}(i)
-		}
+	shouldReturn := iterateOverCharacters(isDirectory, stop, hash, hashLen, salt, encryptionScheme, benchmarking)
+	if shouldReturn {
+		return 
 	}
 
 	go func() {
@@ -341,20 +320,124 @@ func findMatchingHash(hash string, wordlistPath string, salt string, encryptionS
 		if benchmarking == true {
 			writeToFileForAllThreads(hash)
 		}
-		close(stop) // Signal other goroutines to stop
+		close(stop)
+
 	case <-stop:
-		fmt.Println("\n\nHash cracked. Quitting...")
+		writeToFileForAllThreads(hash)
 	}
+
+	return
 }
 
-func writeToFile(startingCharacter string, hash string, guess string) {
-	startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
-
-	err := os.WriteFile("benchmarking/"+hash+"/benchmarkFor"+startingCharacter+".txt", []byte(guess), 0644)
-	if err != nil {
-		println("Error writing to file: ", err)
-		os.Exit(1)
+func iterateOverCharacters(isDirectory bool, stop chan bool, hash string, hashLen int, salt string, encryptionScheme string, benchmarking bool) bool {
+	if isDirectory {
+		for i := 0; i < len(characters); i++ {
+			go func(i int) {
+				select {
+				case <-stop:
+					return 
+				default:
+					startingCharacters := readInGuess(hash, string(characters[i]))
+					if startingCharacters == "" {
+						iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
+					} else {
+						restartBenchmarkForHashes(hash, hashLen, salt, encryptionScheme, startingCharacters, stop, benchmarking, i)
+					}
+				}
+			}(i)
+		}
+	} else {
+		for i := 0; i < len(characters); i++ {
+			go func(i int) {
+				select {
+				case <-stop:
+					return 
+				default:
+					iteratingOverAllCombinations(hashLen, hash, salt, encryptionScheme, string(characters[i]), stop, benchmarking, i, false)
+				}
+			}(i)
+		}
 	}
+	return false
+}
+
+
+func restartBenchmarkForHashes(hash string, hashLen int, salt string, encryptionScheme string, startingCharacters string, stop chan bool, benchmarking bool, threadID int) {
+    
+    storeGuessInThreadInfo(threadID, startingCharacters)
+    for length := len(startingCharacters); length <= 10; length++ {
+        select {
+        case <-stop:
+            return // Quit signal received, terminate goroutine
+        default:
+            permutations := generatePermutationsWithFixedFirstLetter(startingCharacters)
+            for guess := range permutations {
+                hashedGuess := calculateWordHash(hashLen, guess, salt, encryptionScheme)
+
+                if hash == hashedGuess {
+                    fmt.Println("\n\nHash cracked! The original word is:", guess)
+					writeToFile("answer", hash, guess)
+                    close(stop) // Signal other goroutines to stop
+                    return      // Terminate goroutine if hash is cracked
+                }
+                storeGuessInThreadInfo(threadID, guess)
+            }
+            startingCharacters = string(startingCharacters[0]) + strings.Repeat("a", len(startingCharacters))
+        }
+    }
+}
+
+func generatePermutationsWithFixedFirstLetter(input string) <-chan string {
+    firstLetter := string(input[0])
+    remaining := input[1:]
+
+    result := make(chan string)
+    go func() {
+        generatePermutationsHelper(remaining, firstLetter, result)
+        close(result)
+    }()
+
+    return result
+}
+
+func generatePermutationsHelper(input string, current string, result chan<- string) {
+    if len(input) == 0 {
+        result <- current
+        return
+    }
+
+    char := input[0]
+    remaining := input[1:]
+
+    index := strings.Index(characters, string(char))
+    if index == -1 {
+        return
+    }
+
+    for i := index; i < len(characters); i++ {
+        generatePermutationsHelper(remaining, current+string(characters[i]), result)
+    }
+}
+
+
+func writeToFile(startingCharacter string, hash string, guess string) {
+
+	if startingCharacter != "answer" {
+		startingCharacter = "0x" + fmt.Sprintf("%x", startingCharacter)
+		err := os.WriteFile("benchmarking/" + hash +"/benchmarkFor" + startingCharacter + ".txt", []byte(guess), 0644)
+		if err != nil {
+			println("Error writing to file: ", err)
+			os.Exit(1)
+		}
+	} else {
+		err := os.WriteFile("benchmarking/" + hash +"/" + startingCharacter + ".txt", []byte(guess), 0644)
+		if err != nil {
+			println("Error writing to file: ", err)
+			os.Exit(1)
+		}
+	}
+
+	
 }
 
 func checkForInvalidFileLetters(startingCharacter string) bool {
@@ -385,34 +468,30 @@ func timeTracker(quit chan bool) {
 // Function to iterate over all possible combinations of characters
 func iteratingOverAllCombinations(hashLen int, hash string, salt string, encryptionScheme string, startingCharacter string, stop chan bool, benchmarking bool, threadID int, isRestart bool) {
 
-	maxLength := 10
+    maxLength := 10
+    initialLength := 1
+    
+    for length := initialLength; length <= maxLength; length++ {
+        select {
+        case <-stop:
+            return // Quit signal received, terminate goroutine
+        default:
+            for guess := range generateCombinations(characters, length, startingCharacter) {
+                hashedGuess := calculateWordHash(hashLen, guess, salt, encryptionScheme)
 
-	firstCharacter := ""
+                if benchmarking == true {
+                    storeGuessInThreadInfo(threadID, guess)
+                }
 
-	if isRestart {
-		firstCharacter = string(startingCharacter[0])
-	}
-
-	for length := 1; length <= maxLength; length++ {
-		select {
-		case <-stop:
-			return // Quit signal received, terminate goroutine
-		default:
-			for _, guess := range generateCombinations(characters, length, startingCharacter, firstCharacter) {
-				hashedGuess := calculateWordHash(hashLen, guess, salt, encryptionScheme)
-
-				if benchmarking == true {
-					storeGuessInThreadInfo(threadID, guess)
-				}
-
-				if hash == hashedGuess {
-					fmt.Println("\n\nHash cracked! The original word is:", guess)
-					close(stop) // Signal other goroutines to stop
-					return      // Terminate goroutine if hash is cracked
-				}
-			}
-		}
-	}
+                if hash == hashedGuess {
+                    fmt.Println("\n\nHash cracked! The original word is:", guess)
+                    close(stop) // Signal other goroutines to stop
+					writeToFile("answer", hash, guess)
+                    return      // Terminate goroutine if hash is cracked
+                }
+            }
+        }
+    }
 }
 
 func readInGuess(hash string, startingCharacter string) string {
@@ -420,8 +499,7 @@ func readInGuess(hash string, startingCharacter string) string {
 
 	file, err := os.Open("benchmarking/" + hash + "/benchmarkFor" + startingCharacter + ".txt")
 	if err != nil {
-		println("Error opening File:", startingCharacter)
-		os.Exit(1)
+		return ""
 	}
 	defer file.Close()
 
@@ -431,47 +509,23 @@ func readInGuess(hash string, startingCharacter string) string {
 	return scanner.Text()
 }
 
-// Generate all possible combinations of characters
-func generateCombinations(characters string, length int, startingCharacter string, benchmarkRestart string) []string {
-	var result []string
-	if benchmarkRestart != "" {
-		generateCombinationsWithRestart(characters, length, benchmarkRestart, &result, startingCharacter)
-	} else {
-		generateCombinationsWithoutBenchmarkRestart(characters, length, startingCharacter, &result)
-	}
-	return result
+func generateCombinations(characters string, length int, startingCharacter string) <-chan string {
+    result := make(chan string)
+    go func() {
+        defer close(result)
+        generateCombinationsHelper(characters, length, startingCharacter, result)
+    }()
+    return result
 }
 
-func generateCombinationsWithoutBenchmarkRestart(characters string, length int, current string, result *[]string) {
-	if length == 0 {
-		*result = append(*result, current)
-		return
-	}
-	for _, char := range characters {
-		generateCombinationsWithoutBenchmarkRestart(characters, length-1, current+string(char), result)
-	}
-}
-
-func generateCombinationsWithRestart(characters string, length int, current string, result *[]string, startingCharacter string) {
-	if length == 0 {
-		*result = append(*result, current)
-		return
-	}
-
-	// Find the index of the startingCharacter in the characters string
-	startIndex := strings.Index(characters, startingCharacter)
-
-	// If startingCharacter is not found or is the last character, generate all combinations
-	if startIndex == -1 || startIndex == len(characters)-1 {
-		for _, char := range characters {
-			generateCombinationsWithRestart(characters, length-1, current+string(char), result, startingCharacter)
-		}
-	} else {
-		// Generate combinations starting from the index of startingCharacter
-		for i := startIndex; i < len(characters); i++ {
-			generateCombinationsWithRestart(characters, length-1, current+string(characters[i]), result, startingCharacter)
-		}
-	}
+func generateCombinationsHelper(characters string, length int, current string, result chan<- string) {
+    if length == 0 {
+        result <- current
+        return
+    }
+    for _, char := range characters {
+        generateCombinationsHelper(characters, length-1, current+string(char), result)
+    }
 }
 
 // Calculate the hash of a given word,
@@ -523,7 +577,80 @@ func hashWord(word string, encryptionScheme string, salt string) string {
 	return hashedWord
 }
 
-/// This is where the maddeny of how to efficeintly implment benchmarking with threads comes in
+// Divide a slice of strings into n parts used for parallel processing of a wordlist
+func divideIntoParts(words []string, n int) [][]string {
+	var divided [][]string
+
+	size := len(words) / n
+	for i := 0; i < n; i++ {
+		start := i * size
+		end := start + size
+
+		// For the last slice, append the remainder elements
+		if i == n-1 {
+			end = len(words)
+		}
+
+		divided = append(divided, words[start:end])
+	}
+
+	return divided
+}
+
+func findHashInParts(words []string, wg *sync.WaitGroup, hashFound chan bool, hash string, salt string, encryptionScheme string) {
+    defer wg.Done()
+    for _, word := range words {
+        select {
+        case <-hashFound:
+            return // Stop goroutine
+        default:
+            hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
+            if hashedWord == hash {
+                println("\n\nHash cracked! The original word is:", word, "\n")
+                hashFound <- true
+				os.Exit(0) //If we don't exit here program crashes
+            }
+        }
+    }
+}
+
+func iteratingWordList(wordlistPath string, hash string, salt string, encryptionScheme string, hashFound chan bool) bool {
+    // Read the wordlist file
+    wordlistBytes, err := ioutil.ReadFile(wordlistPath)
+    if err != nil {
+        println("Error reading wordlist:", err)
+        return false
+    }
+
+    // Convert the wordlist to a string array
+    wordlist := string(wordlistBytes)
+    allWords := strings.Split(wordlist, "\n")
+
+    var wg sync.WaitGroup
+    numOfParts := 20
+    wordsArray := divideIntoParts(allWords, numOfParts)
+
+
+    // Start goroutines
+    for _, words := range wordsArray {
+        wg.Add(1)
+        go findHashInParts(words, &wg, hashFound, hash, salt, encryptionScheme)
+    }
+
+    // Wait for all goroutines to finish or stop signal
+   	wg.Wait()
+	
+	close(hashFound)
+	return false
+}
+
+
+
+
+
+
+// This is where the maddeny of how to efficeintly implment benchmarking with threads comes in
+
 
 func storeGuessInThreadInfo(threadID int, guess string) {
 	switch threadID {
@@ -721,6 +848,15 @@ func storeGuessInThreadInfo(threadID int, guess string) {
 		fmt.Println("Invalid thread ID:", threadID)
 	}
 }
+
+
+
+
+
+
+
+
+
 
 func writeToFileForAllThreads(hash string) {
 	var characters = []string{
