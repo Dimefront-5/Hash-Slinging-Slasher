@@ -267,6 +267,7 @@ func determineIfSalted(hash string, salt string) (string, string, string) {
 func schemeChecking(encryptionScheme string, hash string) {
 	if encryptionScheme == "error" {
 		println("Error: Hash is not supported by this program - ", hash)
+		os.Exit(0)
 	} else {
 		println("\nCracking hash:", hash)
 	}
@@ -714,7 +715,7 @@ func detectHashBasedOnLength(hashLen int, hashedWord string, word string) string
 		hashedWord = fmt.Sprintf("%x", sha256.Sum224([]byte(word)))
 	default:
 		println("Unable to determine the hash function to be used.")
-		os.Exit(1)
+		os.Exit(0)
 	}
 	return hashedWord
 }
