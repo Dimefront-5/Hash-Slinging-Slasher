@@ -268,7 +268,7 @@ func schemeChecking(encryptionScheme string, hash string) {
 	if encryptionScheme == "error" {
 		println("Error: Hash is not supported by this program - ", hash)
 	} else {
-		println("Cracking hash:", hash)
+		println("\nCracking hash:", hash)
 	}
 }
 
@@ -362,8 +362,13 @@ func iteratingWordList(wordlistPath string, hash string, salt string, encryption
     // Wait for all goroutines to finish or stop signal
    	wg.Wait()
 	
-	close(hashFound)
-	return false
+	select {
+	case <-hashFound:
+		return true
+	default:
+		close(hashFound)
+		return false
+	}
 }
 
 // Divide a slice of strings into n parts used for parallel processing of a wordlist
@@ -397,8 +402,8 @@ func findHashInWordlist(words []string, wg *sync.WaitGroup, hashFound chan bool,
             hashedWord := calculateWordHash(len(hash), word, salt, encryptionScheme)
             if hashedWord == hash {
                 println("\n\nHash cracked! The original word is:", word, "\n")
-                hashFound <- true
-				os.Exit(0) //If we don't exit here program crashes
+                close(hashFound)
+				return
             }
         }
     }
@@ -442,6 +447,7 @@ func iterateUsingCharacters(benchmarking bool, hash string, hashLen int, salt st
 			writeToFileForAllThreads(hash)
 		}
 		close(stop)
+		os.Exit(0)
 
 	case <-stop:
 		if benchmarking == true {
@@ -489,8 +495,8 @@ func checkingToSeeIfWeHaveTriedToCrackThisHash(benchmarking bool, hash string, i
 func iterateOverCharacters(isDirectory bool, stop chan bool, hash string, hashLen int, salt string, encryptionScheme string, benchmarking bool) bool {
 	
 	if isDirectory { //If we have already tried to crack this hash then we will start where we left off
+		println("we see that there has been progress made on cracking this hash, we will start from where we left off.")
 		for i := 0; i < len(characters); i++ {
-			println("we see that there has been progress made on cracking this hash, we will start from where we left off.")
 			IteratingForBenchmark(stop, hash, hashLen, salt, encryptionScheme, benchmarking, i)
 		}
 	} else {
@@ -553,6 +559,7 @@ func startFromBenchmarkWords(hash string, hashLen int, salt string, encryptionSc
 
                 if hash == hashedGuess {
                     fmt.Println("\n\nHash cracked! The original word is:", guess)
+
 					writeToFile("answer", hash, guess)
                     close(stop) // Signal other goroutines to stop
                     return      // Terminate goroutine if hash is cracked
@@ -636,6 +643,7 @@ func iteratingOverAllCombinations(hashLen int, hash string, salt string, encrypt
                 if hash == hashedGuess {
                     fmt.Println("\n\nHash cracked! The original word is:", guess)
                     close(stop) // Signal other goroutines to stop
+					os.Mkdir("benchmarking/"+hash, 0777)
 					writeToFile("answer", hash, guess)
                     return      // Terminate goroutine if hash is cracked
                 }
